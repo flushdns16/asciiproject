@@ -3,92 +3,115 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ASCII Video Encoder & Terminal Streamer</title>
+    <title>ASCII Video Terminal Streamer</title>
     <style>
         body {
-            background-color: #050505;
+            background-color: #030303;
             color: #00ff66;
             font-family: 'Courier New', Courier, monospace;
+            margin: 0;
+            padding: 20px;
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
             min-height: 100vh;
-            margin: 0;
+            box-sizing: border-box;
         }
-        .container {
-            border: 1px solid #00ff66;
-            padding: 25px;
+        .header-panel {
+            width: 100%;
+            max-width: 900px;
             background-color: #0d0208;
-            box-shadow: 0 0 25px rgba(0, 255, 102, 0.3);
+            border: 1px solid #00ff66;
+            padding: 20px;
             border-radius: 8px;
-            width: 600px;
-            text-align: center;
+            box-shadow: 0 0 20px rgba(0, 255, 102, 0.2);
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
         }
         h2 {
+            margin: 0 0 10px 0;
+            width: 100%;
             color: #00ff66;
             text-shadow: 0 0 8px rgba(0, 255, 102, 0.6);
-            margin-top: 0;
+            font-size: 20px;
+            letter-spacing: 1px;
         }
-        input, button {
+        input[type="file"], input[type="text"] {
             background-color: #000;
             color: #00ff66;
             border: 1px solid #00ff66;
             padding: 10px;
-            margin: 8px 0;
-            width: 100%;
-            box-sizing: border-box;
             font-family: 'Courier New', Courier, monospace;
             border-radius: 4px;
+            flex: 1;
+            min-width: 200px;
         }
-        button:hover {
+        button {
             background-color: #00ff66;
             color: #000;
-            cursor: pointer;
+            border: none;
+            padding: 10px 20px;
+            font-family: 'Courier New', Courier, monospace;
             font-weight: bold;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        button:hover {
+            background-color: #00cc52;
+            box-shadow: 0 0 10px rgba(0, 255, 102, 0.5);
+        }
+        button:disabled {
+            background-color: #333;
+            color: #666;
+            cursor: not-allowed;
         }
         #status {
-            margin-top: 10px;
-            font-size: 13px;
+            width: 100%;
+            font-size: 14px;
             color: #ff0055;
+            margin-top: 5px;
         }
         .success {
             color: #00ff66 !important;
-            word-break: break-all;
             font-weight: bold;
+            word-break: break-all;
         }
-        /* Önizleme ekranını büyüttük ve netleştirdik */
+        /* Tam Sayfa Devasa ve Net Terminal Önizleme Ekranı */
         #ascii-preview {
-            font-family: 'Courier New', Courier, monospace;
-            font-size: 8px;
-            line-height: 8px;
-            white-space: pre;
+            width: 100%;
+            max-width: 1100px;
+            flex: 1;
             background: #000;
             color: #00ff66;
-            padding: 15px;
-            margin-top: 15px;
-            height: 250px;
-            overflow: hidden;
-            border: 1px solid #00ff66;
-            border-radius: 4px;
-            text-align: left;
+            border: 2px solid #00ff66;
+            border-radius: 8px;
+            padding: 20px;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 7px;
+            line-height: 7px;
+            white-space: pre;
+            overflow: auto;
+            box-shadow: 0 0 30px rgba(0, 255, 102, 0.15);
+            box-sizing: border-box;
+            min-height: 450px;
         }
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <h2>ASCII TERMINAL STREAM</h2>
-        <p style="font-size: 12px; color: #888;">Yüksek Kalibre Net Matrix Modu</p>
-        
+    <div class="header-panel">
+        <h2>ASCII TERMINAL STREAMER // FULLSCREEN HQ</h2>
         <input type="file" id="videoFile" accept="video/*">
-        <input type="text" id="customPath" placeholder="Örn: mytm1 (Sadece harf/rakam)">
-        
-        <button onclick="processVideo()" id="processBtn">SİSTEME ENJEKTE ET</button>
-        
+        <input type="text" id="customPath" placeholder="Dizin adı (Örn: mytm)">
+        <button onclick="processVideo()" id="processBtn">ENJEKTE ET & OLUŞTUR</button>
         <div id="status"></div>
-        <div id="ascii-preview">Önizleme burada belirecek...</div>
     </div>
+
+    <div id="ascii-preview">Video yüklenmeyi ve işlenmeyi bekliyor... Önizleme burada tam ekran ve net bir şekilde belirecek.</div>
 
     <canvas id="canvas" style="display:none;"></canvas>
 
@@ -101,18 +124,18 @@
             const btn = document.getElementById('processBtn');
 
             if (fileInput.files.length === 0) {
-                statusDiv.innerText = "Lütfen bir video seçin!";
+                statusDiv.innerText = "Lütfen bir video dosyası seçin!";
                 return;
             }
 
             if (!pathInput || !/^[a-zA-Z0-9]+$/.test(pathInput)) {
-                statusDiv.innerText = "Hata: Yol sadece harf ve rakam olmalıdır!";
+                statusDiv.innerText = "Hata: Dizin adı yalnızca harf ve rakamlardan oluşmalıdır!";
                 return;
             }
 
             btn.disabled = true;
             statusDiv.className = "";
-            statusDiv.innerText = "Video hazırlanıyor...";
+            statusDiv.innerText = "Video RAM'e alınıyor...";
 
             const file = fileInput.files[0];
             const video = document.createElement('video');
@@ -123,28 +146,28 @@
             try {
                 await new Promise((resolve, reject) => {
                     video.onloadedmetadata = () => resolve();
-                    video.onerror = () => reject(new Error("Video yüklenemedi."));
+                    video.onerror = () => reject(new Error("Video yüklenemedi veya geçersiz format."));
                 });
 
                 const duration = video.duration;
                 const fps = 10;
-                const totalFrames = Math.min(Math.floor(duration * fps), 300);
+                const totalFrames = Math.min(Math.floor(duration * fps), 350);
                 const frames = [];
 
                 const canvas = document.getElementById('canvas');
                 const ctx = canvas.getContext('2d');
                 
-                // Terminal oranına uygun optimum çözünürlük
-                const cols = 90;
-                const rows = 45;
+                // Tam ekran için optimize edilmiş yüksek çözünürlük
+                const cols = 130;
+                const rows = 65;
                 canvas.width = cols;
                 canvas.height = rows;
 
-                // Daha geniş kontrast aralığına sahip karakter seti (En koyudan en açıktan)
-                const asciiChars = "@@@@@@@######MMMMMBBHHHhhbbwwqqmmZZOO00QQLLCCJJYYXXzzccuuvvnnrrjjfftt//\\|()1{}[]?-_+~<>i!lI;:,\"^`'. ";
+                // Genişletilmiş ve keskin kontrast tonları
+                const asciiChars = "@#W$9876543210?!abc;:+-. ";
 
                 for (let i = 0; i < totalFrames; i++) {
-                    statusDiv.innerText = `Kareler işleniyor: ${i + 1} / ${totalFrames}`;
+                    statusDiv.innerText = `Kareler işleniyor ve optimize ediliyor: ${i + 1} / ${totalFrames}`;
                     video.currentTime = i / fps;
                     
                     await new Promise(resolve => {
@@ -173,10 +196,10 @@
                         asciiImage += "\n";
                     }
                     frames.push(asciiImage);
-                    previewDiv.innerText = asciiImage;
+                    previewDiv.innerText = asciiImage; // Canlı dev ekran önizleme
                 }
 
-                statusDiv.innerText = "Sunucuya kaydediliyor...";
+                statusDiv.innerText = "Sunucuya aktarılıyor...";
 
                 const response = await fetch('/upload', {
                     method: 'POST',
@@ -193,11 +216,11 @@
                 const result = await response.json();
 
                 if (!response.ok) {
-                    throw new Error(result.detail || "Kayıt hatası.");
+                    throw new Error(result.detail || "Sunucu kayıt başarısız.");
                 }
 
                 statusDiv.className = "success";
-                statusDiv.innerHTML = `Başarılı! Terminalden çağır:<br><b>curl https://${window.location.host}/${pathInput}</b>`;
+                statusDiv.innerHTML = `Başarılı! Terminalde oynatmak için:<br><b>curl https://${window.location.host}/${pathInput}</b>`;
             } catch (error) {
                 statusDiv.className = "";
                 statusDiv.innerText = "Hata: " + error.message;
