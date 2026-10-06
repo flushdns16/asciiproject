@@ -110,6 +110,7 @@
             font-weight: bold;
             word-break: break-all;
         }
+        /* Önizleme ekranı büyütüldü ve okunabilir hale getirildi */
         #ascii-preview {
             width: 100%;
             max-width: 1100px;
@@ -120,17 +121,16 @@
             border-radius: 8px;
             padding: 20px;
             font-family: 'Courier New', Courier, monospace;
-            font-size: 7px;
-            line-height: 7px;
+            font-size: 11px;
+            line-height: 12px;
             white-space: pre;
             overflow: auto;
             box-shadow: 0 0 35px rgba(0, 255, 102, 0.2);
             box-sizing: border-box;
-            min-height: 480px;
+            min-height: 520px;
         }
-        /* Web önizlemesinde beyaz yazıyı parlatmak için stil */
         .matrix-rain { color: #00ff66; }
-        .matrix-text { color: #ffffff; font-weight: bold; text-shadow: 0 0 5px #ffffff; }
+        .matrix-text { color: #ffffff; font-weight: bold; text-shadow: 0 0 6px #ffffff; }
     </style>
 </head>
 <body>
@@ -226,9 +226,9 @@
         };
 
         function generateMatrixFrames(text) {
-            const cols = 100;
-            const rows = 40;
-            const totalFrames = 30;
+            const cols = 90;
+            const rows = 35;
+            const totalFrames = 25;
             const frames = [];
             text = text.toUpperCase();
 
@@ -269,7 +269,7 @@
                                 let tx = currX + c;
                                 if (tx >= 0 && tx < cols && line[c] !== ' ') {
                                     screenChars[ty][tx] = line[c];
-                                    screenTypes[ty][tx] = 1; // Beyaz yazı
+                                    screenTypes[ty][tx] = 1;
                                 }
                             }
                         }
@@ -277,7 +277,6 @@
                     currX += charW + 1;
                 }
 
-                // HTML önizlemesi için span tagleri ile renk ayrımı
                 let htmlStr = "";
                 for (let r = 0; r < rows; r++) {
                     let lineHtml = "";
@@ -300,7 +299,6 @@
             return frames;
         }
 
-        // 1. Video İşleme
         async function processVideo() {
             stopAnim();
             const fileInput = document.getElementById('videoFile');
@@ -341,8 +339,8 @@
 
                 const canvas = document.getElementById('canvas');
                 const ctx = canvas.getContext('2d');
-                const cols = 120;
-                const rows = 50;
+                const cols = 90;
+                const rows = 35;
                 canvas.width = cols;
                 canvas.height = rows;
 
@@ -401,7 +399,6 @@
             }
         }
 
-        // 2. Metin Matrix Akış İşleme
         async function processText() {
             stopAnim();
             const textInput = document.getElementById('textInput').value.trim();
@@ -427,7 +424,7 @@
             
             let idx = 0;
             currentInterval = setInterval(() => {
-                previewDiv.innerHTML = frames[idx]; // innerHTML ile renkli spanleri destekliyoruz
+                previewDiv.innerHTML = frames[idx];
                 idx = (idx + 1) % frames.length;
             }, 100);
 
