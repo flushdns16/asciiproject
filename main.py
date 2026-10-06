@@ -3,11 +3,25 @@ from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel
 import asyncio
 import json
+import os
 
 app = FastAPI()
+DB_FILE = "database.json"
 
-# Bellekte (RAM) video verilerini tutacağımız sözlük
-MEMORY_DB = {}
+# JSON dosyasından verileri oku
+def load_db():
+    if os.path.exists(DB_FILE):
+        try:
+            with open(DB_FILE, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except:
+            return {}
+    return {}
+
+# JSON dosyasına verileri kaydet
+def save_db(data):
+    with open(DB_FILE, "w", encoding="utf-8") as f:
+        json.dump(data, f)
 
 class AsciiVideo(BaseModel):
     path: str
@@ -22,21 +36,24 @@ async def upload_video(video: AsciiVideo):
     if len(video.frames) > 900:
         raise HTTPException(status_code=400, detail="Video çok uzun (Max 30 saniye)")
 
-    # Veriyi doğrudan RAM'e kaydediyoruz
-    MEMORY_DB[video.path.lower()] = {
+    db = load_db()
+    db[video.path.lower()] = {
         "fps": video.fps,
         "frames": video.frames
     }
+    save_db(db)
     
     return {"message": "Başarılı"}
 
 @app.get("/{path}", response_class=PlainTextResponse)
 async def stream_video(path: str):
+    db = load_db()
     path_clean = path.lower()
-    if path_clean not in MEMORY_DB:
+    
+    if path_clean not in db:
         raise HTTPException(status_code=404, detail="Veri paketi bulunamadı.")
     
-    video_data = MEMORY_DB[path_clean]
+    video_data = db[path_clean]
     fps = video_data["fps"]
     frames = video_data["frames"]
     delay = 1.0 / fps
@@ -44,7 +61,6 @@ async def stream_video(path: str):
     async def frame_generator():
         try:
             for frame in frames:
-                # Terminali temizle ve çerçeveyi bas
                 yield "\033[H\033[J" + frame
                 await asyncio.sleep(delay)
         except asyncio.CancelledError:
