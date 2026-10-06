@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ASCII Matrix Streamer // Hacker Console</title>
+    <title>ASCII Matrix Streamer /</title>
     <style>
         body {
             background-color: #0d0208;
             color: #00ff66;
             font-family: 'Courier New', Courier, monospace;
             margin: 0;
-            padding: 20px;
+            padding: 15px;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -22,19 +22,20 @@
             max-width: 950px;
             background-color: #121212;
             border: 1px solid #00ff66;
-            padding: 20px;
+            padding: 15px;
             border-radius: 8px;
             box-shadow: 0 0 25px rgba(0, 255, 102, 0.25);
             display: flex;
             flex-direction: column;
             gap: 12px;
             margin-bottom: 20px;
+            box-sizing: border-box;
         }
         h2 {
             margin: 0;
             color: #00ff66;
             text-shadow: 0 0 8px rgba(0, 255, 102, 0.6);
-            font-size: 20px;
+            font-size: 18px;
             letter-spacing: 1px;
         }
         .tabs {
@@ -79,7 +80,8 @@
             font-family: 'Courier New', Courier, monospace;
             border-radius: 4px;
             flex: 1;
-            min-width: 220px;
+            min-width: 200px;
+            box-sizing: border-box;
         }
         button {
             background-color: #00ff66;
@@ -110,7 +112,7 @@
             font-weight: bold;
             word-break: break-all;
         }
-        /* Önizleme ekranı büyütüldü ve okunabilir hale getirildi */
+        /* Mobil ve masaüstünde otomatik ölçeklenen (responsive) konsol ekranı */
         #ascii-preview {
             width: 100%;
             max-width: 1100px;
@@ -119,15 +121,18 @@
             color: #00ff66;
             border: 2px solid #00ff66;
             border-radius: 8px;
-            padding: 20px;
+            padding: 15px;
             font-family: 'Courier New', Courier, monospace;
-            font-size: 11px;
-            line-height: 12px;
+            font-size: min(1.3vw, 1.3vh);
+            line-height: min(1.4vw, 1.4vh);
             white-space: pre;
             overflow: auto;
             box-shadow: 0 0 35px rgba(0, 255, 102, 0.2);
             box-sizing: border-box;
-            min-height: 520px;
+            min-height: 480px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
         .matrix-rain { color: #00ff66; }
         .matrix-text { color: #ffffff; font-weight: bold; text-shadow: 0 0 6px #ffffff; }
@@ -136,7 +141,7 @@
 <body>
 
     <div class="header-panel">
-        <h2>ASCII MATRIX STREAMER // HACKER CONSOLE</h2>
+        <h2>ASCII MATRIX STREAMER /</h2>
         
         <div class="tabs">
             <button class="tab-btn active" onclick="switchTab('video')">Video Yükle</button>
@@ -226,9 +231,9 @@
         };
 
         function generateMatrixFrames(text) {
-            const cols = 90;
-            const rows = 35;
-            const totalFrames = 25;
+            const cols = 120;
+            const rows = 40;
+            const totalFrames = 20;
             const frames = [];
             text = text.toUpperCase();
 
@@ -339,8 +344,8 @@
 
                 const canvas = document.getElementById('canvas');
                 const ctx = canvas.getContext('2d');
-                const cols = 90;
-                const rows = 35;
+                const cols = 120;
+                const rows = 40;
                 canvas.width = cols;
                 canvas.height = rows;
 
@@ -390,7 +395,7 @@
                 if (!response.ok) throw new Error(result.detail || "Kayıt hatası.");
 
                 statusDiv.className = "success";
-                statusDiv.innerHTML = `Başarılı! Terminalde oynat:<br><b>curl https://kendinecurl.onrender.com/${pathInput}</b>`;
+                statusDiv.innerHTML = `Başarılı! Terminalde veya Mobilde aç:<br><b><a href="/${pathInput}" target="_blank" style="color:#00ff66;">https://kendinecurl.onrender.com/${pathInput}</a></b>`;
             } catch (error) {
                 statusDiv.className = "";
                 statusDiv.innerText = "Hata: " + error.message;
@@ -426,7 +431,7 @@
             currentInterval = setInterval(() => {
                 previewDiv.innerHTML = frames[idx];
                 idx = (idx + 1) % frames.length;
-            }, 100);
+            }, 80);
 
             try {
                 const response = await fetch('/upload-text', {
@@ -439,7 +444,7 @@
                 if (!response.ok) throw new Error(result.detail || "Kayıt hatası.");
 
                 statusDiv.className = "success";
-                statusDiv.innerHTML = `Matrix akışı başarıyla kaydedildi!<br><b>curl https://kendinecurl.onrender.com/${pathInput}</b>`;
+                statusDiv.innerHTML = `Matrix akışı hazır!<br>Terminalden çalıştır veya Mobilde aç:<br><b><a href="/${pathInput}" target="_blank" style="color:#00ff66;">https://kendinecurl.onrender.com/${pathInput}</a></b>`;
             } catch (error) {
                 statusDiv.className = "";
                 statusDiv.innerText = "Hata: " + error.message;
