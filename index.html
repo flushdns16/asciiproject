@@ -119,14 +119,14 @@
                 });
 
                 const duration = video.duration;
-                if (duration > 30) {
+                if (duration > 300) {
                     statusDiv.innerText = "Hata: Video 30 saniyeden uzun olamaz!";
                     btn.disabled = false;
                     return;
                 }
 
                 const fps = 8; // Akıcılık ve performans dengesi
-                const totalFrames = Math.min(Math.floor(duration * fps), 300); // Max 300 kare
+                const totalFrames = Math.min(Math.floor(duration * fps), 900); // Max 300 kare
                 const frames = [];
 
                 const canvas = document.getElementById('canvas');
