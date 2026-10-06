@@ -1,5 +1,5 @@
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import PlainTextResponse, JSONResponse
+from fastapi.responses import PlainTextResponse, StreamingResponse
 from pydantic import BaseModel
 import asyncio
 import json
@@ -34,8 +34,8 @@ async def upload_video(video: AsciiVideo):
     if not clean_path.isalnum():
         raise HTTPException(status_code=400, detail="Sadece harf ve rakam kullanabilirsiniz.")
     
-    if len(video.frames) > 900:
-        raise HTTPException(status_code=400, detail="Video çok uzun (Max 30 saniye)")
+    if len(video.frames) > 500:
+        raise HTTPException(status_code=400, detail="Video çok uzun")
 
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
@@ -48,7 +48,6 @@ async def upload_video(video: AsciiVideo):
     
     return {"message": "Başarılı", "saved_path": clean_path}
 
-# VERİTABANINDA NE VAR GÖRMEK İÇİN GİZLİ KAPI
 @app.get("/debug/list")
 def list_videos():
     conn = sqlite3.connect(DB_NAME)
@@ -58,13 +57,12 @@ def list_videos():
     conn.close()
     return {"registered_paths": [row[0] for row in rows]}
 
-@app.get("/{path}", response_class=PlainTextResponse)
+@app.get("/{path}")
 async def stream_video(path: str):
     path_clean = path.strip().lower()
     
-    # Eğer debug sayfasına gitmek isterse engelleme
     if path_clean == "debug":
-        return "Debug active"
+        return PlainTextResponse("Debug active")
 
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
@@ -87,7 +85,7 @@ async def stream_video(path: str):
         except asyncio.CancelledError:
             pass
 
-    return frame_generator()
+    return StreamingResponse(frame_generator(), media_type="text/plain")
 
 @app.get("/")
 def read_index():
