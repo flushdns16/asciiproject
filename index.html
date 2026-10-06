@@ -1,456 +1,904 @@
 <!DOCTYPE html>
+
 <html lang="tr">
+
 <head>
+
     <meta charset="UTF-8">
+
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ASCII Matrix Streamer</title>
+
+    <title>ASCII Matrix Streamer // Hacker Console</title>
+
     <style>
+
         body {
+
             background-color: #0d0208;
+
             color: #00ff66;
+
             font-family: 'Courier New', Courier, monospace;
+
             margin: 0;
-            padding: 15px;
+
+            padding: 20px;
+
             display: flex;
+
             flex-direction: column;
+
             align-items: center;
+
             min-height: 100vh;
+
             box-sizing: border-box;
+
         }
+
         .header-panel {
+
             width: 100%;
+
             max-width: 950px;
+
             background-color: #121212;
+
             border: 1px solid #00ff66;
-            padding: 15px;
+
+            padding: 20px;
+
             border-radius: 8px;
+
             box-shadow: 0 0 25px rgba(0, 255, 102, 0.25);
+
             display: flex;
+
             flex-direction: column;
+
             gap: 12px;
+
             margin-bottom: 20px;
-            box-sizing: border-box;
+
         }
+
         h2 {
+
             margin: 0;
+
             color: #00ff66;
+
             text-shadow: 0 0 8px rgba(0, 255, 102, 0.6);
-            font-size: 18px;
+
+            font-size: 20px;
+
             letter-spacing: 1px;
+
         }
+
         .tabs {
+
             display: flex;
+
             gap: 10px;
+
         }
+
         .tab-btn {
+
             background: #000;
+
             color: #00ff66;
+
             border: 1px solid #00ff66;
+
             padding: 8px 15px;
+
             cursor: pointer;
+
             border-radius: 4px;
+
             font-family: 'Courier New', Courier, monospace;
+
             font-weight: bold;
+
             opacity: 0.7;
+
         }
+
         .tab-btn.active {
+
             opacity: 1;
+
             background: #00ff66;
+
             color: #000;
+
             box-shadow: 0 0 10px rgba(0, 255, 102, 0.5);
+
         }
+
         .tab-content {
+
             display: none;
+
             flex-direction: column;
+
             gap: 10px;
+
         }
+
         .tab-content.active {
+
             display: flex;
+
         }
+
         .row {
+
             display: flex;
+
             gap: 10px;
+
             flex-wrap: wrap;
+
         }
+
         input[type="file"], input[type="text"] {
+
             background-color: #000;
+
             color: #00ff66;
+
             border: 1px solid #00ff66;
+
             padding: 10px;
+
             font-family: 'Courier New', Courier, monospace;
+
             border-radius: 4px;
+
             flex: 1;
-            min-width: 200px;
-            box-sizing: border-box;
+
+            min-width: 220px;
+
         }
+
         button {
+
             background-color: #00ff66;
+
             color: #000;
+
             border: none;
+
             padding: 10px 20px;
+
             font-family: 'Courier New', Courier, monospace;
+
             font-weight: bold;
+
             border-radius: 4px;
+
             cursor: pointer;
+
             transition: 0.2s;
+
         }
+
         button:hover {
+
             background-color: #00cc52;
+
             box-shadow: 0 0 12px rgba(0, 255, 102, 0.6);
+
         }
+
         button:disabled {
+
             background-color: #222;
+
             color: #555;
+
             cursor: not-allowed;
+
         }
+
         #status {
+
             font-size: 14px;
+
             color: #ff0055;
+
         }
+
         .success {
+
             color: #00ff66 !important;
+
             font-weight: bold;
+
             word-break: break-all;
+
         }
+
+        /* Önizleme ekranı büyütüldü ve okunabilir hale getirildi */
+
         #ascii-preview {
+
             width: 100%;
+
             max-width: 1100px;
+
             flex: 1;
+
             background: #000;
+
             color: #00ff66;
+
             border: 2px solid #00ff66;
+
             border-radius: 8px;
-            padding: 15px;
+
+            padding: 20px;
+
             font-family: 'Courier New', Courier, monospace;
-            font-size: 9px;
-            line-height: 10px;
+
+            font-size: 11px;
+
+            line-height: 12px;
+
             white-space: pre;
+
             overflow: auto;
+
             box-shadow: 0 0 35px rgba(0, 255, 102, 0.2);
+
             box-sizing: border-box;
-            min-height: 480px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+
+            min-height: 520px;
+
         }
+
         .matrix-rain { color: #00ff66; }
+
         .matrix-text { color: #ffffff; font-weight: bold; text-shadow: 0 0 6px #ffffff; }
+
     </style>
+
 </head>
+
 <body>
 
+
+
     <div class="header-panel">
-        <h2>ASCII MATRIX STREAMER</h2>
+
+        <h2>ASCII MATRIX STREAMER // HACKER CONSOLE</h2>
+
         
+
         <div class="tabs">
+
             <button class="tab-btn active" onclick="switchTab('video')">Video Yükle</button>
+
             <button class="tab-btn" onclick="switchTab('text')">Matrix Text & Akış</button>
+
         </div>
+
+
 
         <!-- Video Sekmesi -->
+
         <div id="videoTab" class="tab-content active">
+
             <div class="row">
+
                 <input type="file" id="videoFile" accept="video/*">
+
                 <input type="text" id="customPathFile" placeholder="Dizin adı (Örn: mytm)">
+
                 <button onclick="processVideo()" id="btnVideo">VİDEOYU ENJEKTE ET</button>
+
             </div>
+
         </div>
+
+
 
         <!-- Metin Sekmesi -->
+
         <div id="textTab" class="tab-content">
+
             <div class="row">
+
                 <input type="text" id="textInput" placeholder="Aşılacak Metin (Örn: KENDINECURL)">
+
                 <input type="text" id="customPathText" placeholder="Dizin adı (Örn: matrix1)">
+
                 <button onclick="processText()" id="btnText">MATRIX AKIŞINI BAŞLAT</button>
+
             </div>
+
         </div>
 
+
+
         <div id="status"></div>
+
     </div>
+
+
 
     <div id="ascii-preview">Sistem aktif. Video yükleyin veya Matrix akışlı metin oluşturun.</div>
 
+
+
     <canvas id="canvas" style="display:none;"></canvas>
 
+
+
     <script>
+
         let currentInterval = null;
 
+
+
         function stopAnim() {
+
             if (currentInterval) {
+
                 clearInterval(currentInterval);
+
                 currentInterval = null;
+
             }
+
         }
+
+
 
         function switchTab(tab) {
+
             stopAnim();
+
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+
             document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+
             
+
             if (tab === 'video') {
+
                 document.querySelector('.tab-btn:nth-child(1)').classList.add('active');
+
                 document.getElementById('videoTab').classList.add('active');
+
                 document.getElementById('ascii-preview').innerText = "Video önizleme alanı hazır.";
+
             } else {
+
                 document.querySelector('.tab-btn:nth-child(2)').classList.add('active');
+
                 document.getElementById('textTab').classList.add('active');
+
                 document.getElementById('ascii-preview').innerText = "Metin girerek Matrix akışını başlatın.";
+
             }
+
         }
+
+
 
         const FONT = {
+
             'A': ["  A  ", " A A ", "AAAAA", "A   A", "A   A"],
+
             'B': ["BBBB ", "B   B", "BBBB ", "B   B", "BBBB "],
+
             'C': [" CCC ", "C    ", "C    ", "C    ", " CCC "],
+
             'D': ["DDDD ", "D   D", "D   D", "D   D", "DDDD "],
+
             'E': ["EEEEE", "E    ", "EEEE ", "E    ", "EEEEE"],
+
             'F': ["FFFFF", "F    ", "FFF  ", "F    ", "F    "],
+
             'G': [" GGG ", "G    ", "G  GG", "G   G", " GGG "],
+
             'H': ["H   H", "H   H", "HHHHH", "H   H", "H   H"],
+
             'I': [" III ", "  I  ", "  I  ", "  I  ", " III "],
+
             'J': ["  JJJ", "    J", "    J", "J   J", " JJJ "],
+
             'K': ["K   K", "K  K ", "KKK  ", "K  K ", "K   K"],
+
             'L': ["L    ", "L    ", "L    ", "L    ", "LLLLL"],
+
             'M': ["M   M", "MM MM", "M M M", "M   M", "M   M"],
+
             'N': ["N   N", "NN  N", "N N N", "N  NN", "N   N"],
+
             'O': [" OOO ", "O   O", "O   O", "O   O", " OOO "],
+
             'P': ["PPPP ", "P   P", "PPPP ", "P    ", "P    "],
+
             'Q': [" QQQ ", "Q   Q", "Q Q Q", " QQQQ", "    Q"],
+
             'R': ["RRRR ", "R   R", "RRRR ", "R  R ", "R   R"],
+
             'S': [" SSS ", "S    ", " SSS ", "    S", " SSS "],
+
             'T': ["TTTTT", "  T  ", "  T  ", "  T  ", "  T  "],
+
             'U': ["U   U", "U   U", "U   U", "U   U", " UUU "],
+
             'V': ["V   V", "V   V", " V V ", " V V ", "  V  "],
+
             'W': ["W   W", "W W W", "WW WW", "W   W", "W   W"],
+
             'X': ["X   X", " X X ", "  X  ", " X X ", "X   X"],
+
             'Y': ["Y   Y", " Y Y ", "  Y  ", "  Y  ", "  Y  "],
+
             'Z': ["ZZZZZ", "   Z ", "  Z  ", " Z   ", "EEEEE"],
+
             ' ': ["     ", "     ", "     ", "     ", "     "],
+
             '!': ["  !  ", "  !  ", "  !  ", "     ", "  !  "]
+
         };
 
+
+
         function generateMatrixFrames(text) {
-            const cols = 100;
+
+            const cols = 90;
+
             const rows = 35;
-            const totalFrames = 20;
+
+            const totalFrames = 25;
+
             const frames = [];
+
             text = text.toUpperCase();
 
+
+
             let drops = Array(cols).fill(0).map(() => Math.floor(Math.random() * rows));
+
             const chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ@#$*&";
 
+
+
             for (let f = 0; f < totalFrames; f++) {
+
                 let screenChars = Array(rows).fill().map(() => Array(cols).fill(' '));
+
                 let screenTypes = Array(rows).fill().map(() => Array(cols).fill(0));
+
                 
+
                 for (let x = 0; x < cols; x++) {
+
                     let dropY = drops[x];
+
                     for (let y = 0; y < rows; y++) {
+
                         let dist = (y - dropY + rows) % rows;
+
                         if (dist < 12) {
+
                             screenChars[y][x] = chars[Math.floor(Math.random() * chars.length)];
+
                             screenTypes[y][x] = 0;
+
                         }
+
                     }
+
                     drops[x] = (drops[x] + 1) % rows;
+
                 }
+
+
 
                 let textLines = 5;
+
                 let charW = 5;
+
                 let totalW = text.length * (charW + 1);
+
                 let startX = Math.max(2, Math.floor((cols - totalW) / 2));
+
                 let startY = Math.floor((rows - textLines) / 2);
 
+
+
                 let currX = startX;
+
                 for (let i = 0; i < text.length; i++) {
+
                     let char = text[i];
+
                     let grid = FONT[char] || FONT[' '];
+
                     for (let r = 0; r < grid.length; r++) {
+
                         let ty = startY + r;
+
                         if (ty >= 0 && ty < rows) {
+
                             let line = grid[r];
+
                             for (let c = 0; c < line.length; c++) {
+
                                 let tx = currX + c;
+
                                 if (tx >= 0 && tx < cols && line[c] !== ' ') {
+
                                     screenChars[ty][tx] = line[c];
+
                                     screenTypes[ty][tx] = 1;
+
                                 }
+
                             }
+
                         }
+
                     }
+
                     currX += charW + 1;
+
                 }
+
+
 
                 let htmlStr = "";
+
                 for (let r = 0; r < rows; r++) {
+
                     let lineHtml = "";
+
                     let currentType = -1;
+
                     for (let c = 0; c < cols; c++) {
+
                         let t = screenTypes[r][c];
+
                         let char = screenChars[r][c];
+
                         if (t !== currentType) {
+
                             if (currentType !== -1) lineHtml += "</span>";
+
                             lineHtml += t === 1 ? '<span class="matrix-text">' : '<span class="matrix-rain">';
+
                             currentType = t;
+
                         }
+
                         lineHtml += char === '<' ? '&lt;' : (char === '>' ? '&gt;' : char);
+
                     }
+
                     if (currentType !== -1) lineHtml += "</span>";
+
                     htmlStr += lineHtml + "\n";
+
                 }
+
                 frames.push(htmlStr);
+
             }
+
             return frames;
+
         }
 
+
+
         async function processVideo() {
+
             stopAnim();
+
             const fileInput = document.getElementById('videoFile');
+
             const pathInput = document.getElementById('customPathFile').value.trim();
+
             const statusDiv = document.getElementById('status');
+
             const previewDiv = document.getElementById('ascii-preview');
+
             const btn = document.getElementById('btnVideo');
 
+
+
             if (fileInput.files.length === 0) {
+
                 statusDiv.innerText = "Lütfen video seçin!";
+
                 return;
+
             }
+
             if (!pathInput || !/^[a-zA-Z0-9]+$/.test(pathInput)) {
+
                 statusDiv.innerText = "Hata: Dizin sadece harf/rakam olmalı!";
+
                 return;
+
             }
+
+
 
             btn.disabled = true;
+
             statusDiv.className = "";
+
             statusDiv.innerText = "Video işleniyor...";
 
+
+
             const file = fileInput.files[0];
+
             const video = document.createElement('video');
+
             video.src = URL.createObjectURL(file);
+
             video.muted = true;
+
             video.playsInline = true;
 
+
+
             try {
+
                 await new Promise((resolve, reject) => {
+
                     video.onloadedmetadata = () => resolve();
+
                     video.onerror = () => reject(new Error("Video yüklenemedi."));
+
                 });
 
+
+
                 const duration = video.duration;
+
                 const fps = 10;
+
                 const totalFrames = Math.min(Math.floor(duration * fps), 350);
+
                 const frames = [];
 
+
+
                 const canvas = document.getElementById('canvas');
+
                 const ctx = canvas.getContext('2d');
-                const cols = 100;
+
+                const cols = 90;
+
                 const rows = 35;
+
                 canvas.width = cols;
+
                 canvas.height = rows;
+
+
 
                 const asciiChars = "@#W$9876543210?!abc;:+-. ";
 
+
+
                 for (let i = 0; i < totalFrames; i++) {
+
                     statusDiv.innerText = `Kareler işleniyor: ${i + 1} / ${totalFrames}`;
+
                     video.currentTime = i / fps;
+
                     
+
                     await new Promise(resolve => {
+
                         const handler = () => {
+
                             video.removeEventListener('seeked', handler);
+
                             resolve();
+
                         };
+
                         video.addEventListener('seeked', handler);
+
                         setTimeout(resolve, 250);
+
                     });
 
+
+
                     ctx.drawImage(video, 0, 0, cols, rows);
+
                     const imgData = ctx.getImageData(0, 0, cols, rows).data;
+
                     
+
                     let asciiImage = "";
+
                     for (let y = 0; y < rows; y++) {
+
                         for (let x = 0; x < cols; x++) {
+
                             const offset = (y * cols + x) * 4;
+
                             const r = imgData[offset];
+
                             const g = imgData[offset + 1];
+
                             const b = imgData[offset + 2];
+
                             const avg = (r * 0.299 + g * 0.587 + b * 0.114);
+
                             const charIndex = Math.floor((avg / 255) * (asciiChars.length - 1));
+
                             asciiImage += asciiChars[charIndex];
+
                         }
+
                         asciiImage += "\n";
+
                     }
+
                     frames.push(asciiImage);
+
                     previewDiv.innerText = asciiImage;
+
                 }
 
+
+
                 statusDiv.innerText = "Sunucuya kaydediliyor...";
+
                 const response = await fetch('/upload', {
+
                     method: 'POST',
+
                     headers: { 'Content-Type': 'application/json' },
+
                     body: JSON.stringify({ path: pathInput, fps: fps, frames: frames })
+
                 });
 
+
+
                 const result = await response.json();
+
                 if (!response.ok) throw new Error(result.detail || "Kayıt hatası.");
 
+
+
                 statusDiv.className = "success";
-                statusDiv.innerHTML = `Başarılı!<br><b><a href="/${pathInput}" target="_blank" style="color:#00ff66;">https://kendinecurl.onrender.com/${pathInput}</a></b>`;
+
+                statusDiv.innerHTML = `Başarılı! Terminalde oynat:<br><b>curl https://kendinecurl.onrender.com/${pathInput}</b>`;
+
             } catch (error) {
+
                 statusDiv.className = "";
+
                 statusDiv.innerText = "Hata: " + error.message;
+
             } finally {
+
                 btn.disabled = false;
+
             }
+
         }
+
+
 
         async function processText() {
+
             stopAnim();
+
             const textInput = document.getElementById('textInput').value.trim();
+
             const pathInput = document.getElementById('customPathText').value.trim();
+
             const statusDiv = document.getElementById('status');
+
             const previewDiv = document.getElementById('ascii-preview');
+
             const btn = document.getElementById('btnText');
 
+
+
             if (!textInput) {
+
                 statusDiv.innerText = "Lütfen bir metin girin!";
+
                 return;
+
             }
+
             if (!pathInput || !/^[a-zA-Z0-9]+$/.test(pathInput)) {
+
                 statusDiv.innerText = "Hata: Dizin sadece harf/rakam olmalı!";
+
                 return;
+
             }
+
+
 
             btn.disabled = true;
+
             statusDiv.className = "";
+
             statusDiv.innerText = "Matrix akışı ve net beyaz yazı oluşturuluyor...";
 
+
+
             const frames = generateMatrixFrames(textInput);
+
             
+
             let idx = 0;
+
             currentInterval = setInterval(() => {
+
                 previewDiv.innerHTML = frames[idx];
+
                 idx = (idx + 1) % frames.length;
-            }, 80);
+
+            }, 100);
+
+
 
             try {
+
                 const response = await fetch('/upload-text', {
+
                     method: 'POST',
+
                     headers: { 'Content-Type': 'application/json' },
+
                     body: JSON.stringify({ text: textInput, path: pathInput })
+
                 });
 
+
+
                 const result = await response.json();
+
                 if (!response.ok) throw new Error(result.detail || "Kayıt hatası.");
 
+
+
                 statusDiv.className = "success";
-                statusDiv.innerHTML = `Matrix akışı hazır!<br><b><a href="/${pathInput}" target="_blank" style="color:#00ff66;">https://kendinecurl.onrender.com/${pathInput}</a></b>`;
+
+                statusDiv.innerHTML = `Matrix akışı başarıyla kaydedildi!<br><b>curl https://kendinecurl.onrender.com/${pathInput}</b>`;
+
             } catch (error) {
+
                 statusDiv.className = "";
+
                 statusDiv.innerText = "Hata: " + error.message;
+
             } finally {
+
                 btn.disabled = false;
+
             }
+
         }
+
     </script>
+
 </body>
-</html>
+
+</html> 
+
