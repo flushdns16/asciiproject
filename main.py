@@ -1,5 +1,5 @@
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import PlainTextResponse
+from fastapi.responses import PlainTextResponse, JSONResponse
 from pydantic import BaseModel
 import asyncio
 import json
@@ -8,7 +8,6 @@ import sqlite3
 app = FastAPI()
 DB_NAME = "ascii.db"
 
-# SQLite veritabanını ve tablosunu hazırla
 def init_db():
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
@@ -31,7 +30,8 @@ class AsciiVideo(BaseModel):
 
 @app.post("/upload")
 async def upload_video(video: AsciiVideo):
-    if not video.path.isalnum():
+    clean_path = video.path.strip().lower()
+    if not clean_path.isalnum():
         raise HTTPException(status_code=400, detail="Sadece harf ve rakam kullanabilirsiniz.")
     
     if len(video.frames) > 900:
@@ -41,16 +41,31 @@ async def upload_video(video: AsciiVideo):
     cursor = conn.cursor()
     cursor.execute(
         "INSERT OR REPLACE INTO videos (path, fps, frames) VALUES (?, ?, ?)",
-        (video.path.lower(), video.fps, json.dumps(video.frames))
+        (clean_path, video.fps, json.dumps(video.frames))
     )
     conn.commit()
     conn.close()
     
-    return {"message": "Başarılı"}
+    return {"message": "Başarılı", "saved_path": clean_path}
+
+# VERİTABANINDA NE VAR GÖRMEK İÇİN GİZLİ KAPI
+@app.get("/debug/list")
+def list_videos():
+    conn = sqlite3.connect(DB_NAME)
+    cursor = conn.cursor()
+    cursor.execute("SELECT path, fps FROM videos")
+    rows = cursor.fetchall()
+    conn.close()
+    return {"registered_paths": [row[0] for row in rows]}
 
 @app.get("/{path}", response_class=PlainTextResponse)
 async def stream_video(path: str):
-    path_clean = path.lower()
+    path_clean = path.strip().lower()
+    
+    # Eğer debug sayfasına gitmek isterse engelleme
+    if path_clean == "debug":
+        return "Debug active"
+
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
     cursor.execute("SELECT fps, frames FROM videos WHERE path = ?", (path_clean,))
