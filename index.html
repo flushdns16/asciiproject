@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ASCII Video & YouTube Streamer</title>
+    <title>ASCII Video Terminal Streamer</title>
     <style>
         body {
             background-color: #030303;
@@ -19,27 +19,25 @@
         }
         .header-panel {
             width: 100%;
-            max-width: 950px;
+            max-width: 900px;
             background-color: #0d0208;
             border: 1px solid #00ff66;
             padding: 20px;
             border-radius: 8px;
             box-shadow: 0 0 20px rgba(0, 255, 102, 0.2);
             display: flex;
-            flex-direction: column;
-            gap: 12px;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
             margin-bottom: 20px;
         }
         h2 {
-            margin: 0;
+            margin: 0 0 10px 0;
+            width: 100%;
             color: #00ff66;
             text-shadow: 0 0 8px rgba(0, 255, 102, 0.6);
             font-size: 20px;
-        }
-        .row {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
+            letter-spacing: 1px;
         }
         input[type="file"], input[type="text"] {
             background-color: #000;
@@ -49,7 +47,7 @@
             font-family: 'Courier New', Courier, monospace;
             border-radius: 4px;
             flex: 1;
-            min-width: 220px;
+            min-width: 200px;
         }
         button {
             background-color: #00ff66;
@@ -71,36 +69,11 @@
             color: #666;
             cursor: not-allowed;
         }
-        .tabs {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 5px;
-        }
-        .tab-btn {
-            background: #111;
-            color: #888;
-            border: 1px solid #333;
-            padding: 6px 15px;
-            cursor: pointer;
-            border-radius: 4px;
-        }
-        .tab-btn.active {
-            background: #00ff66;
-            color: #000;
-            font-weight: bold;
-            border-color: #00ff66;
-        }
-        .tab-content {
-            display: none;
-            flex-direction: column;
-            gap: 10px;
-        }
-        .tab-content.active {
-            display: flex;
-        }
         #status {
+            width: 100%;
             font-size: 14px;
             color: #ff0055;
+            margin-top: 5px;
         }
         .success {
             color: #00ff66 !important;
@@ -130,66 +103,32 @@
 <body>
 
     <div class="header-panel">
-        <h2>ASCII STREAMER // LOCAL & YOUTUBE SHORTS</h2>
-        
-        <div class="tabs">
-            <button class="tab-btn active" onclick="switchTab('file')">Bilgisayardan Yükle</button>
-            <button class="tab-btn" onclick="switchTab('youtube')">YouTube / Shorts URL</button>
-        </div>
-
-        <!-- Dosya Yükleme Paneli -->
-        <div id="fileTab" class="tab-content active">
-            <div class="row">
-                <input type="file" id="videoFile" accept="video/*">
-                <input type="text" id="customPathFile" placeholder="Dizin adı (Örn: mytm)">
-                <button onclick="processFile()" id="btnFile">ENJEKTE ET</button>
-            </div>
-        </div>
-
-        <!-- YouTube URL Paneli -->
-        <div id="youtubeTab" class="tab-content">
-            <div class="row">
-                <input type="text" id="youtubeUrl" placeholder="YouTube veya Shorts Linki (Örn: https://youtube.com/shorts/...)">
-                <input type="text" id="customPathUrl" placeholder="Dizin adı (Örn: shorts1)">
-                <button onclick="processYoutube()" id="btnYoutube">YOUTUBE'DAN İNDİR & ENJEKTE ET</button>
-            </div>
-        </div>
-
+        <h2>ASCII TERMINAL STREAMER // LOCAL HQ</h2>
+        <input type="file" id="videoFile" accept="video/*">
+        <input type="text" id="customPath" placeholder="Dizin adı (Örn: mytm)">
+        <button onclick="processVideo()" id="processBtn">ENJEKTE ET & OLUŞTUR</button>
         <div id="status"></div>
     </div>
 
-    <div id="ascii-preview">Hazır. Bir video dosyası seçin veya YouTube/Shorts linki yapıştırın.</div>
+    <div id="ascii-preview">Video yüklenmeyi bekliyor... Önizleme burada tam ekran ve net bir şekilde belirecek.</div>
 
     <canvas id="canvas" style="display:none;"></canvas>
 
     <script>
-        function switchTab(tab) {
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-            
-            if (tab === 'file') {
-                document.querySelector('.tab-btn:nth-child(1)').classList.add('active');
-                document.getElementById('fileTab').classList.add('active');
-            } else {
-                document.querySelector('.tab-btn:nth-child(2)').classList.add('active');
-                document.getElementById('youtubeTab').classList.add('active');
-            }
-        }
-
-        // 1. Dosya İşleme (Önceki mantık)
-        async function processFile() {
+        async function processVideo() {
             const fileInput = document.getElementById('videoFile');
-            const pathInput = document.getElementById('customPathFile').value.trim();
+            const pathInput = document.getElementById('customPath').value.trim();
             const statusDiv = document.getElementById('status');
             const previewDiv = document.getElementById('ascii-preview');
-            const btn = document.getElementById('btnFile');
+            const btn = document.getElementById('processBtn');
 
             if (fileInput.files.length === 0) {
                 statusDiv.innerText = "Lütfen bir video dosyası seçin!";
                 return;
             }
+
             if (!pathInput || !/^[a-zA-Z0-9]+$/.test(pathInput)) {
-                statusDiv.innerText = "Hata: Dizin adı yalnızca harf ve rakam olmalıdır!";
+                statusDiv.innerText = "Hata: Dizin adı yalnızca harf ve rakamlardan oluşmalıdır!";
                 return;
             }
 
@@ -206,16 +145,17 @@
             try {
                 await new Promise((resolve, reject) => {
                     video.onloadedmetadata = () => resolve();
-                    video.onerror = () => reject(new Error("Video yüklenemedi."));
+                    video.onerror = () => reject(new Error("Video yüklenemedi veya geçersiz format."));
                 });
 
                 const duration = video.duration;
                 const fps = 10;
-                const totalFrames = Math.min(Math.floor(duration * fps), 300);
+                const totalFrames = Math.min(Math.floor(duration * fps), 350);
                 const frames = [];
 
                 const canvas = document.getElementById('canvas');
                 const ctx = canvas.getContext('2d');
+                
                 const cols = 130;
                 const rows = 65;
                 canvas.width = cols;
@@ -224,7 +164,7 @@
                 const asciiChars = "@#W$9876543210?!abc;:+-. ";
 
                 for (let i = 0; i < totalFrames; i++) {
-                    statusDiv.innerText = `Kareler çıkarılıyor: ${i + 1} / ${totalFrames}`;
+                    statusDiv.innerText = `Kareler işleniyor: ${i + 1} / ${totalFrames}`;
                     video.currentTime = i / fps;
                     
                     await new Promise(resolve => {
@@ -256,65 +196,31 @@
                     previewDiv.innerText = asciiImage;
                 }
 
-                statusDiv.innerText = "Sunucuya kaydediliyor...";
+                statusDiv.innerText = "Sunucuya aktarılıyor...";
+
                 const response = await fetch('/upload', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ path: pathInput, fps: fps, frames: frames })
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        path: pathInput,
+                        fps: fps,
+                        frames: frames
+                    })
                 });
 
                 const result = await response.json();
-                if (!response.ok) throw new Error(result.detail || "Kayıt hatası.");
+
+                if (!response.ok) {
+                    throw new Error(result.detail || "Sunucu kayıt başarısız.");
+                }
 
                 statusDiv.className = "success";
-                statusDiv.innerHTML = `Başarılı! Terminalde oynat:<br><b>curl https://${window.location.host}/${pathInput}</b>`;
+                statusDiv.innerHTML = `Başarılı! Terminalde oynatmak için:<br><b>curl https://kendinecurl.onrender.com/${pathInput}</b>`;
             } catch (error) {
                 statusDiv.className = "";
                 statusDiv.innerText = "Hata: " + error.message;
-            } finally {
-                btn.disabled = false;
-            }
-        }
-
-        // 2. YouTube / Shorts URL İşleme
-        async function processYoutube() {
-            const urlInput = document.getElementById('youtubeUrl').value.trim();
-            const pathInput = document.getElementById('customPathUrl').value.trim();
-            const statusDiv = document.getElementById('status');
-            const previewDiv = document.getElementById('ascii-preview');
-            const btn = document.getElementById('btnYoutube');
-
-            if (!urlInput) {
-                statusDiv.innerText = "Lütfen bir YouTube veya Shorts linki girin!";
-                return;
-            }
-            if (!pathInput || !/^[a-zA-Z0-9]+$/.test(pathInput)) {
-                statusDiv.innerText = "Hata: Dizin adı yalnızca harf ve rakam olmalıdır!";
-                return;
-            }
-
-            btn.disabled = true;
-            statusDiv.className = "";
-            statusDiv.innerText = "YouTube videosu sunucuya indiriliyor ve işleniyor (Bu işlem 10-15 saniye sürebilir)...";
-            previewDiv.innerText = "Sunucu tarafında yt-dlp ile dönüştürülüyor...";
-
-            try {
-                const response = await fetch('/upload-url', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ url: urlInput, path: pathInput })
-                });
-
-                const result = await response.json();
-                if (!response.ok) throw new Error(result.detail || "YouTube işleme hatası.");
-
-                statusDiv.className = "success";
-                statusDiv.innerHTML = `YouTube/Shorts başarıyla enjekte edildi!<br><b>curl https://${window.location.host}/${pathInput}</b>`;
-                previewDiv.innerText = "YouTube videosu başarıyla dönüştürüldü ve veritabanına kaydedildi!";
-            } catch (error) {
-                statusDiv.className = "";
-                statusDiv.innerText = "Hata: " + error.message;
-                previewDiv.innerText = "İşlem başarısız oldu.";
             } finally {
                 btn.disabled = false;
             }
