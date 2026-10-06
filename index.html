@@ -25,7 +25,7 @@
             width: 400px;
             text-align: center;
         }
-        h0, h2 {
+        h2 {
             color: #00ff66;
             text-shadow: 0 0 5px rgba(0, 255, 102, 0.5);
         }
@@ -55,8 +55,8 @@
             color: #00ff66 !important;
         }
         #ascii-preview {
-            font-size: 6px;
-            line-height: 6px;
+            font-size: 5px;
+            line-height: 5px;
             white-space: pre;
             background: #000;
             padding: 10px;
@@ -76,7 +76,7 @@
         <input type="file" id="videoFile" accept="video/*">
         <input type="text" id="customPath" placeholder="Örn: mytm1 (Sadece harf/rakam)">
         
-        <button onclick="processVideo()">SİSTEME ENJEKTE ET</button>
+        <button onclick="processVideo()" id="processBtn">SİSTEME ENJEKTE ET</button>
         
         <div id="status"></div>
         <div id="ascii-preview"></div>
@@ -90,6 +90,7 @@
             const pathInput = document.getElementById('customPath').value.trim();
             const statusDiv = document.getElementById('status');
             const previewDiv = document.getElementById('ascii-preview');
+            const btn = document.getElementById('processBtn');
 
             if (fileInput.files.length === 0) {
                 statusDiv.innerText = "Lütfen bir video seçin!";
@@ -101,40 +102,55 @@
                 return;
             }
 
+            btn.disabled = true;
             statusDiv.className = "";
-            statusDiv.innerText = "Video işleniyor ve ASCII'ye çevriliyor...";
+            statusDiv.innerText = "Video yükleniyor...";
 
             const file = fileInput.files[0];
             const video = document.createElement('video');
             video.src = URL.createObjectURL(file);
             video.muted = true;
+            video.playsInline = true;
 
-            video.onloadedmetadata = async () => {
+            try {
+                await new Promise((resolve, reject) => {
+                    video.onloadedmetadata = () => resolve();
+                    video.onerror = () => reject(new Error("Video yüklenemedi veya desteklenmeyen format."));
+                });
+
                 const duration = video.duration;
                 if (duration > 30) {
                     statusDiv.innerText = "Hata: Video 30 saniyeden uzun olamaz!";
+                    btn.disabled = false;
                     return;
                 }
 
-                const fps = 10; // Terminal akışı için 10 FPS idealdir
-                const totalFrames = Math.floor(duration * fps);
+                const fps = 8; // Akıcılık ve performans dengesi
+                const totalFrames = Math.min(Math.floor(duration * fps), 300); // Max 300 kare
                 const frames = [];
 
                 const canvas = document.getElementById('canvas');
                 const ctx = canvas.getContext('2d');
                 
-                // Terminal çözünürlüğü (Genişlik x Yükseklik)
-                const cols = 80;
-                const rows = 40;
+                const cols = 70;
+                const rows = 35;
                 canvas.width = cols;
                 canvas.height = rows;
 
                 const asciiChars = "@#W$9876543210?!abc;:+-. ";
 
                 for (let i = 0; i < totalFrames; i++) {
+                    statusDiv.innerText = `Kareler işleniyor: ${i + 1} / ${totalFrames}`;
                     video.currentTime = i / fps;
+                    
                     await new Promise(resolve => {
-                        video.onseeked = resolve;
+                        const handler = () => {
+                            video.removeEventListener('seeked', handler);
+                            resolve();
+                        };
+                        video.addEventListener('seeked', handler);
+                        // Güvenlik zaman aşımı (takılmayı önlemek için)
+                        setTimeout(resolve, 300);
                     });
 
                     ctx.drawImage(video, 0, 0, cols, rows);
@@ -154,7 +170,38 @@
                         asciiImage += "\n";
                     }
                     frames.push(asciiImage);
-                    previewDiv.innerText = asciiImage; // Anlık önizleme
+                    previewDiv.innerText = asciiImage;
                 }
 
-                statusDiv.innerText = "Sunucuya yükleniyor...";
+                statusDiv.innerText = "Sunucuya kaydediliyor...";
+
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        path: pathInput,
+                        fps: fps,
+                        frames: frames
+                    })
+                });
+
+                const result = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(result.detail || "Sunucu kaydetme hatası.");
+                }
+
+                statusDiv.className = "success";
+                statusDiv.innerHTML = `Başarılı! Terminalden çağır:<br><b>curl https://${window.location.host}/${pathInput}</b>`;
+            } catch (error) {
+                statusDiv.className = "";
+                statusDiv.innerText = "Hata: " + error.message;
+            } finally {
+                btn.disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>
