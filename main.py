@@ -3,25 +3,26 @@ from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel
 import asyncio
 import json
-import os
+import sqlite3
 
 app = FastAPI()
-DB_FILE = "database.json"
+DB_NAME = "ascii.db"
 
-# JSON dosyasından verileri oku
-def load_db():
-    if os.path.exists(DB_FILE):
-        try:
-            with open(DB_FILE, "r", encoding="utf-8") as f:
-                return json.load(f)
-        except:
-            return {}
-    return {}
+# SQLite veritabanını ve tablosunu hazırla
+def init_db():
+    conn = sqlite3.connect(DB_NAME)
+    cursor = conn.cursor()
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS videos (
+            path TEXT PRIMARY KEY,
+            fps INTEGER,
+            frames TEXT
+        )
+    ''')
+    conn.commit()
+    conn.close()
 
-# JSON dosyasına verileri kaydet
-def save_db(data):
-    with open(DB_FILE, "w", encoding="utf-8") as f:
-        json.dump(data, f)
+init_db()
 
 class AsciiVideo(BaseModel):
     path: str
@@ -36,26 +37,31 @@ async def upload_video(video: AsciiVideo):
     if len(video.frames) > 900:
         raise HTTPException(status_code=400, detail="Video çok uzun (Max 30 saniye)")
 
-    db = load_db()
-    db[video.path.lower()] = {
-        "fps": video.fps,
-        "frames": video.frames
-    }
-    save_db(db)
+    conn = sqlite3.connect(DB_NAME)
+    cursor = conn.cursor()
+    cursor.execute(
+        "INSERT OR REPLACE INTO videos (path, fps, frames) VALUES (?, ?, ?)",
+        (video.path.lower(), video.fps, json.dumps(video.frames))
+    )
+    conn.commit()
+    conn.close()
     
     return {"message": "Başarılı"}
 
 @app.get("/{path}", response_class=PlainTextResponse)
 async def stream_video(path: str):
-    db = load_db()
     path_clean = path.lower()
+    conn = sqlite3.connect(DB_NAME)
+    cursor = conn.cursor()
+    cursor.execute("SELECT fps, frames FROM videos WHERE path = ?", (path_clean,))
+    row = cursor.fetchone()
+    conn.close()
     
-    if path_clean not in db:
+    if not row:
         raise HTTPException(status_code=404, detail="Veri paketi bulunamadı.")
     
-    video_data = db[path_clean]
-    fps = video_data["fps"]
-    frames = video_data["frames"]
+    fps = row[0]
+    frames = json.loads(row[1])
     delay = 1.0 / fps
 
     async def frame_generator():
