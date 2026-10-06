@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import PlainTextResponse, StreamingResponse
 from pydantic import BaseModel
 import asyncio
@@ -18,7 +18,8 @@ def init_db():
             path TEXT PRIMARY KEY,
             fps INTEGER,
             frames TEXT,
-            is_text INTEGER DEFAULT 0
+            is_text INTEGER DEFAULT 0,
+            raw_text TEXT
         )
     ''')
     conn.commit()
@@ -44,8 +45,8 @@ async def upload_video(video: AsciiVideo):
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
     cursor.execute(
-        "INSERT OR REPLACE INTO videos (path, fps, frames, is_text) VALUES (?, ?, ?, ?)",
-        (clean_path, video.fps, json.dumps(video.frames), 0)
+        "INSERT OR REPLACE INTO videos (path, fps, frames, is_text, raw_text) VALUES (?, ?, ?, ?, ?)",
+        (clean_path, video.fps, json.dumps(video.frames), 0, "")
     )
     conn.commit()
     conn.close()
@@ -62,9 +63,10 @@ async def upload_text(data: AsciiTextRequest):
     if not text:
         raise HTTPException(status_code=400, detail="Metin boş olamaz.")
 
-    cols = 80
-    rows = 30
-    total_frames = 20  # Daha hafif kare sayısı ile anında tepki
+    # Standart geniş format (Terminal tam ekranı ve mobil için optimize)
+    cols = 120
+    rows = 40
+    total_frames = 20
     fps = 12
     frames = []
 
@@ -110,7 +112,7 @@ async def upload_text(data: AsciiTextRequest):
             drop_y = drops[x]
             for y in range(rows):
                 dist = (y - drop_y + rows) % rows
-                if dist < 10:
+                if dist < 12:
                     screen_chars[y][x] = random.choice(matrix_chars)
                     screen_types[y][x] = 0
             drops[x] = (drops[x] + 1) % rows
@@ -150,8 +152,8 @@ async def upload_text(data: AsciiTextRequest):
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
     cursor.execute(
-        "INSERT OR REPLACE INTO videos (path, fps, frames, is_text) VALUES (?, ?, ?, ?)",
-        (clean_path, fps, json.dumps(frames), 1)
+        "INSERT OR REPLACE INTO videos (path, fps, frames, is_text, raw_text) VALUES (?, ?, ?, ?, ?)",
+        (clean_path, fps, json.dumps(frames), 1, text)
     )
     conn.commit()
     conn.close()
@@ -159,7 +161,7 @@ async def upload_text(data: AsciiTextRequest):
     return {"message": "Başarılı", "saved_path": clean_path}
 
 @app.get("/{path}")
-async def stream_video(path: str):
+async def stream_video(path: str, request: Request):
     path_clean = path.strip().lower()
     
     if path_clean == "debug":
@@ -184,25 +186,78 @@ async def stream_video(path: str):
     is_text = row[2]
     delay = 1.0 / fps
 
+    # Eğer istek tarayıcıdan (User-Agent içinde curl geçmiyorsa) geliyorsa, şahane bir HTML konsol wrapper içinde sunalım
+    user_agent = request.headers.get("user-agent", "").lower()
+    if "curl" not in user_agent and "wget" not in user_agent and is_text:
+        # Mobil ve masaüstü tarayıcılar için tam ekran esnek responsive HTML görünüm
+        html_content = f"""
+        <!DOCTYPE html>
+        <html lang="tr">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Matrix Terminal // {path_clean}</title>
+            <style>
+                body {{
+                    background-color: #000;
+                    color: #00ff66;
+                    font-family: 'Courier New', Courier, monospace;
+                    margin: 0;
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    height: 100vh;
+                    overflow: hidden;
+                }}
+                #terminal {{
+                    font-size: min(1.8vw, 1.8vh);
+                    line-height: min(1.9vw, 1.9vh);
+                    white-space: pre;
+                    background: #000;
+                    padding: 10px;
+                    border: 1px solid #00ff66;
+                    box-shadow: 0 0 30px rgba(0, 255, 102, 0.3);
+                }}
+                .matrix-rain {{ color: #00ff66; }}
+                .matrix-text {{ color: #ffffff; font-weight: bold; text-shadow: 0 0 8px #ffffff; }}
+            </style>
+        </head>
+        <body>
+            <div id="terminal">Yükleniyor...</div>
+            <script>
+                const frames = {json.dumps(frames)};
+                let idx = 0;
+                const term = document.getElementById('terminal');
+                
+                // HTML karelerini temizleyip tarayıcı içi esnek gösterim
+                setInterval(() => {{
+                    term.innerHTML = frames[idx];
+                    idx = (idx + 1) % frames.length;
+                }}, {int(delay * 1000)});
+            </script>
+        </body>
+        </html>
+        """
+        return PlainTextResponse(html_content, media_type="text/html")
+
+    # Terminal için ham ANSI akışı
     async def frame_generator():
         try:
             while True:
                 for frame in frames:
-                    # Ekranı temizleyip kareyi anında bas, chunk biriktirmeyi önle
-                    yield "\033[H\033[J" + frame
+                    yield ("\033[H\033[J" + frame).encode('utf-8')
                     await asyncio.sleep(delay)
                 if not is_text:
                     break
         except asyncio.CancelledError:
             pass
 
-    # Tamponlamayı (buffering) tamamen devre dışı bırakan kritik başlıklar
     return StreamingResponse(
         frame_generator(), 
-        media_type="text/plain",
+        media_type="text/plain; charset=utf-8",
         headers={
             "X-Accel-Buffering": "no",
-            "Cache-Control": "no-cache",
+            "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
             "Connection": "keep-alive"
         }
     )
