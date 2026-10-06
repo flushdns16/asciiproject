@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ASCII Video Terminal Streamer</title>
+    <title>ASCII Terminal Streamer // Video & Text Art</title>
     <style>
         body {
             background-color: #030303;
@@ -19,25 +19,54 @@
         }
         .header-panel {
             width: 100%;
-            max-width: 900px;
+            max-width: 950px;
             background-color: #0d0208;
             border: 1px solid #00ff66;
             padding: 20px;
             border-radius: 8px;
             box-shadow: 0 0 20px rgba(0, 255, 102, 0.2);
             display: flex;
-            gap: 15px;
-            align-items: center;
-            flex-wrap: wrap;
+            flex-direction: column;
+            gap: 12px;
             margin-bottom: 20px;
         }
         h2 {
-            margin: 0 0 10px 0;
-            width: 100%;
+            margin: 0;
             color: #00ff66;
             text-shadow: 0 0 8px rgba(0, 255, 102, 0.6);
             font-size: 20px;
-            letter-spacing: 1px;
+        }
+        .tabs {
+            display: flex;
+            gap: 10px;
+        }
+        .tab-btn {
+            background: #111;
+            color: #888;
+            border: 1px solid #333;
+            padding: 8px 15px;
+            cursor: pointer;
+            border-radius: 4px;
+            font-family: 'Courier New', Courier, monospace;
+            font-weight: bold;
+        }
+        .tab-btn.active {
+            background: #00ff66;
+            color: #000;
+            border-color: #00ff66;
+        }
+        .tab-content {
+            display: none;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .tab-content.active {
+            display: flex;
+        }
+        .row {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
         }
         input[type="file"], input[type="text"] {
             background-color: #000;
@@ -47,7 +76,7 @@
             font-family: 'Courier New', Courier, monospace;
             border-radius: 4px;
             flex: 1;
-            min-width: 200px;
+            min-width: 220px;
         }
         button {
             background-color: #00ff66;
@@ -70,10 +99,8 @@
             cursor: not-allowed;
         }
         #status {
-            width: 100%;
             font-size: 14px;
             color: #ff0055;
-            margin-top: 5px;
         }
         .success {
             color: #00ff66 !important;
@@ -103,32 +130,66 @@
 <body>
 
     <div class="header-panel">
-        <h2>ASCII TERMINAL STREAMER // LOCAL HQ</h2>
-        <input type="file" id="videoFile" accept="video/*">
-        <input type="text" id="customPath" placeholder="Dizin adı (Örn: mytm)">
-        <button onclick="processVideo()" id="processBtn">ENJEKTE ET & OLUŞTUR</button>
+        <h2>ASCII STREAMER // VIDEO & TEXT ANIMATION</h2>
+        
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('video')">Video Yükle</button>
+            <button class="tab-btn" onclick="switchTab('text')">Metin & Zıplama Efekti</button>
+        </div>
+
+        <!-- Video Sekmesi -->
+        <div id="videoTab" class="tab-content active">
+            <div class="row">
+                <input type="file" id="videoFile" accept="video/*">
+                <input type="text" id="customPathFile" placeholder="Dizin adı (Örn: mytm)">
+                <button onclick="processVideo()" id="btnVideo">VİDEOYU ENJEKTE ET</button>
+            </div>
+        </div>
+
+        <!-- Metin Sekmesi -->
+        <div id="textTab" class="tab-content">
+            <div class="row">
+                <input type="text" id="textInput" placeholder="Yazılacak Metin (Örn: KENDINECURL)">
+                <input type="text" id="customPathText" placeholder="Dizin adı (Örn: text1)">
+                <button onclick="processText()" id="btnText">METNİ ANİMASYONA ÇEVİR</button>
+            </div>
+        </div>
+
         <div id="status"></div>
     </div>
 
-    <div id="ascii-preview">Video yüklenmeyi bekliyor... Önizleme burada tam ekran ve net bir şekilde belirecek.</div>
+    <div id="ascii-preview">Hazır. Video seçebilir veya metin girerek zıplayan ASCII animasyonu oluşturabilirsin.</div>
 
     <canvas id="canvas" style="display:none;"></canvas>
 
     <script>
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            
+            if (tab === 'video') {
+                document.querySelector('.tab-btn:nth-child(1)').classList.add('active');
+                document.getElementById('videoTab').classList.add('active');
+            } else {
+                document.querySelector('.tab-btn:nth-child(2)').classList.add('active');
+                document.getElementById('textTab').classList.add('active');
+            }
+        }
+
+        // 1. Video İşleme
         async function processVideo() {
             const fileInput = document.getElementById('videoFile');
-            const pathInput = document.getElementById('customPath').value.trim();
+            const pathInput = document.getElementById('customPathFile').value.trim();
             const statusDiv = document.getElementById('status');
             const previewDiv = document.getElementById('ascii-preview');
-            const btn = document.getElementById('processBtn');
+            const btn = document.getElementById('btnVideo');
 
             if (fileInput.files.length === 0) {
                 statusDiv.innerText = "Lütfen bir video dosyası seçin!";
                 return;
             }
-
             if (!pathInput || !/^[a-zA-Z0-9]+$/.test(pathInput)) {
-                statusDiv.innerText = "Hata: Dizin adı yalnızca harf ve rakamlardan oluşmalıdır!";
+                statusDiv.innerText = "Hata: Dizin adı yalnızca harf ve rakam olmalıdır!";
                 return;
             }
 
@@ -145,7 +206,7 @@
             try {
                 await new Promise((resolve, reject) => {
                     video.onloadedmetadata = () => resolve();
-                    video.onerror = () => reject(new Error("Video yüklenemedi veya geçersiz format."));
+                    video.onerror = () => reject(new Error("Video yüklenemedi."));
                 });
 
                 const duration = video.duration;
@@ -155,7 +216,6 @@
 
                 const canvas = document.getElementById('canvas');
                 const ctx = canvas.getContext('2d');
-                
                 const cols = 130;
                 const rows = 65;
                 canvas.width = cols;
@@ -196,28 +256,60 @@
                     previewDiv.innerText = asciiImage;
                 }
 
-                statusDiv.innerText = "Sunucuya aktarılıyor...";
-
+                statusDiv.innerText = "Sunucuya kaydediliyor...";
                 const response = await fetch('/upload', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        path: pathInput,
-                        fps: fps,
-                        frames: frames
-                    })
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ path: pathInput, fps: fps, frames: frames })
                 });
 
                 const result = await response.json();
-
-                if (!response.ok) {
-                    throw new Error(result.detail || "Sunucu kayıt başarısız.");
-                }
+                if (!response.ok) throw new Error(result.detail || "Kayıt hatası.");
 
                 statusDiv.className = "success";
-                statusDiv.innerHTML = `Başarılı! Terminalde oynatmak için:<br><b>curl https://asciicurl.onrender.com/${pathInput}</b>`;
+                statusDiv.innerHTML = `Başarılı! Terminalde oynat:<br><b>curl https://kendinecurl.onrender.com/${pathInput}</b>`;
+            } catch (error) {
+                statusDiv.className = "";
+                statusDiv.innerText = "Hata: " + error.message;
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        // 2. Metin Animasyonu İşleme
+        async function processText() {
+            const textInput = document.getElementById('textInput').value.trim();
+            const pathInput = document.getElementById('customPathText').value.trim();
+            const statusDiv = document.getElementById('status');
+            const previewDiv = document.getElementById('ascii-preview');
+            const btn = document.getElementById('btnText');
+
+            if (!textInput) {
+                statusDiv.innerText = "Lütfen bir metin girin!";
+                return;
+            }
+            if (!pathInput || !/^[a-zA-Z0-9]+$/.test(pathInput)) {
+                statusDiv.innerText = "Hata: Dizin adı yalnızca harf ve rakam olmalıdır!";
+                return;
+            }
+
+            btn.disabled = true;
+            statusDiv.className = "";
+            statusDiv.innerText = "Zıplayan metin animasyonu oluşturuluyor...";
+
+            try {
+                const response = await fetch('/upload-text', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text: textInput, path: pathInput })
+                });
+
+                const result = await response.json();
+                if (!response.ok) throw new Error(result.detail || "Metin işleme hatası.");
+
+                statusDiv.className = "success";
+                statusDiv.innerHTML = `Zıplayan metin animasyonu başarıyla oluşturuldu!<br><b>curl https://kendinecurl.onrender.com/${pathInput}</b>`;
+                previewDiv.innerText = "Metin animasyonu sunucuda hazırlandı!";
             } catch (error) {
                 statusDiv.className = "";
                 statusDiv.innerText = "Hata: " + error.message;
