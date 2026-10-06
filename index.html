@@ -1,322 +1,288 @@
-<!DOCTYPE html>
-<html lang="tr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ASCII Terminal Streamer // Video & Text Art</title>
-    <style>
-        body {
-            background-color: #030303;
-            color: #00ff66;
-            font-family: 'Courier New', Courier, monospace;
-            margin: 0;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-height: 100vh;
-            box-sizing: border-box;
-        }
-        .header-panel {
-            width: 100%;
-            max-width: 950px;
-            background-color: #0d0208;
-            border: 1px solid #00ff66;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 0 20px rgba(0, 255, 102, 0.2);
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            margin-bottom: 20px;
-        }
-        h2 {
-            margin: 0;
-            color: #00ff66;
-            text-shadow: 0 0 8px rgba(0, 255, 102, 0.6);
-            font-size: 20px;
-        }
-        .tabs {
-            display: flex;
-            gap: 10px;
-        }
-        .tab-btn {
-            background: #111;
-            color: #888;
-            border: 1px solid #333;
-            padding: 8px 15px;
-            cursor: pointer;
-            border-radius: 4px;
-            font-family: 'Courier New', Courier, monospace;
-            font-weight: bold;
-        }
-        .tab-btn.active {
-            background: #00ff66;
-            color: #000;
-            border-color: #00ff66;
-        }
-        .tab-content {
-            display: none;
-            flex-direction: column;
-            gap: 10px;
-        }
-        .tab-content.active {
-            display: flex;
-        }
-        .row {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-        input[type="file"], input[type="text"] {
-            background-color: #000;
-            color: #00ff66;
-            border: 1px solid #00ff66;
-            padding: 10px;
-            font-family: 'Courier New', Courier, monospace;
-            border-radius: 4px;
-            flex: 1;
-            min-width: 220px;
-        }
-        button {
-            background-color: #00ff66;
-            color: #000;
-            border: none;
-            padding: 10px 20px;
-            font-family: 'Courier New', Courier, monospace;
-            font-weight: bold;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: 0.2s;
-        }
-        button:hover {
-            background-color: #00cc52;
-            box-shadow: 0 0 10px rgba(0, 255, 102, 0.5);
-        }
-        button:disabled {
-            background-color: #333;
-            color: #666;
-            cursor: not-allowed;
-        }
-        #status {
-            font-size: 14px;
-            color: #ff0055;
-        }
-        .success {
-            color: #00ff66 !important;
-            font-weight: bold;
-            word-break: break-all;
-        }
-        #ascii-preview {
-            width: 100%;
-            max-width: 1100px;
-            flex: 1;
-            background: #000;
-            color: #00ff66;
-            border: 2px solid #00ff66;
-            border-radius: 8px;
-            padding: 20px;
-            font-family: 'Courier New', Courier, monospace;
-            font-size: 7px;
-            line-height: 7px;
-            white-space: pre;
-            overflow: auto;
-            box-shadow: 0 0 30px rgba(0, 255, 102, 0.15);
-            box-sizing: border-box;
-            min-height: 450px;
-        }
-    </style>
-</head>
-<body>
-
-    <div class="header-panel">
-        <h2>ASCII STREAMER // VIDEO & TEXT ANIMATION</h2>
-        
-        <div class="tabs">
-            <button class="tab-btn active" onclick="switchTab('video')">Video Yükle</button>
-            <button class="tab-btn" onclick="switchTab('text')">Metin & Zıplama Efekti</button>
-        </div>
-
-        <!-- Video Sekmesi -->
-        <div id="videoTab" class="tab-content active">
-            <div class="row">
-                <input type="file" id="videoFile" accept="video/*">
-                <input type="text" id="customPathFile" placeholder="Dizin adı (Örn: mytm)">
-                <button onclick="processVideo()" id="btnVideo">VİDEOYU ENJEKTE ET</button>
-            </div>
-        </div>
-
-        <!-- Metin Sekmesi -->
-        <div id="textTab" class="tab-content">
-            <div class="row">
-                <input type="text" id="textInput" placeholder="Yazılacak Metin (Örn: KENDINECURL)">
-                <input type="text" id="customPathText" placeholder="Dizin adı (Örn: text1)">
-                <button onclick="processText()" id="btnText">METNİ ANİMASYONA ÇEVİR</button>
-            </div>
-        </div>
-
-        <div id="status"></div>
+<div class="header-panel">
+    <h2>ASCII STREAMER // VIDEO & TEXT ANIMATION</h2>
+    
+    <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('video')">Video Yükle</button>
+        <button class="tab-btn" onclick="switchTab('text')">Metin & Zıplama Efekti</button>
     </div>
 
-    <div id="ascii-preview">Hazır. Video seçebilir veya metin girerek zıplayan ASCII animasyonu oluşturabilirsin.</div>
+    <!-- Video Sekmesi -->
+    <div id="videoTab" class="tab-content active">
+        <div class="row">
+            <input type="file" id="videoFile" accept="video/*">
+            <input type="text" id="customPathFile" placeholder="Dizin adı (Örn: mytm)">
+            <button onclick="processVideo()" id="btnVideo">VİDEOYU ENJEKTE ET</button>
+        </div>
+    </div>
 
-    <canvas id="canvas" style="display:none;"></canvas>
+    <!-- Metin Sekmesi -->
+    <div id="textTab" class="tab-content">
+        <div class="row">
+            <input type="text" id="textInput" placeholder="Yazılacak Metin (Örn: KENDINECURL)">
+            <input type="text" id="customPathText" placeholder="Dizin adı (Örn: text1)">
+            <button onclick="processText()" id="btnText">METNİ ENJEKTE ET & OYNAT</button>
+        </div>
+    </div>
 
-    <script>
-        function switchTab(tab) {
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-            
-            if (tab === 'video') {
-                document.querySelector('.tab-btn:nth-child(1)').classList.add('active');
-                document.getElementById('videoTab').classList.add('active');
-            } else {
-                document.querySelector('.tab-btn:nth-child(2)').classList.add('active');
-                document.getElementById('textTab').classList.add('active');
-            }
+    <div id="status"></div>
+</div>
+
+<div id="ascii-preview">Hazır. Video seçebilir veya metin girerek zıplayan ASCII animasyonu oluşturabilirsin.</div>
+
+<canvas id="canvas" style="display:none;"></canvas>
+
+<script>
+    let currentAnimationInterval = null;
+
+    function stopCurrentAnimation() {
+        if (currentAnimationInterval) {
+            clearInterval(currentAnimationInterval);
+            currentAnimationInterval = null;
         }
+    }
 
-        // 1. Video İşleme
-        async function processVideo() {
-            const fileInput = document.getElementById('videoFile');
-            const pathInput = document.getElementById('customPathFile').value.trim();
-            const statusDiv = document.getElementById('status');
-            const previewDiv = document.getElementById('ascii-preview');
-            const btn = document.getElementById('btnVideo');
+    function switchTab(tab) {
+        stopCurrentAnimation();
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        
+        if (tab === 'video') {
+            document.querySelector('.tab-btn:nth-child(1)').classList.add('active');
+            document.getElementById('videoTab').classList.add('active');
+            document.getElementById('ascii-preview').innerText = "Video bekleniyor...";
+        } else {
+            document.querySelector('.tab-btn:nth-child(2)').classList.add('active');
+            document.getElementById('textTab').classList.add('active');
+            document.getElementById('ascii-preview').innerText = "Metin animasyonu için yukarıya yazı yazın.";
+        }
+    }
 
-            if (fileInput.files.length === 0) {
-                statusDiv.innerText = "Lütfen bir video dosyası seçin!";
-                return;
-            }
-            if (!pathInput || !/^[a-zA-Z0-9]+$/.test(pathInput)) {
-                statusDiv.innerText = "Hata: Dizin adı yalnızca harf ve rakam olmalıdır!";
-                return;
-            }
+    // Basit ASCII Font Matrisi
+    const FONT = {
+        'A': ["  A  ", " A A ", "AAAAA", "A   A"],
+        'B': ["BBBB ", "B   B", "BBBB ", "B   B", "BBBB "],
+        'C': [" CCC ", "C    ", "C    ", " CCC "],
+        'D': ["DDDD ", "D   D", "D   D", "DDDD "],
+        'E': ["EEEEE", "E    ", "EEEE ", "E    ", "EEEEE"],
+        'F': ["FFFFF", "F    ", "FFF  ", "F    ", "F    "],
+        'G': [" GGG ", "G    ", "G  GG", " GGG "],
+        'H': ["H   H", "H   H", "HHHHH", "H   H", "H   H"],
+        'I': [" III ", "  I  ", "  I  ", " III "],
+        'J': ["  JJJ", "    J", "    J", "J   J", " JJJ "],
+        'K': ["K   K", "K  K ", "KKK  ", "K  K ", "K   K"],
+        'L': ["L    ", "L    ", "L    ", "LLLLL"],
+        'M': ["M   M", "MM MM", "M M M", "M   M"],
+        'N': ["N   N", "NN  N", "N N N", "N  NN"],
+        'O': [" OOO ", "O   O", "O   O", " OOO "],
+        'P': ["PPPP ", "P   P", "PPPP ", "P    "],
+        'Q': [" QQQ ", "Q   Q", "Q Q Q", " QQQQ"],
+        'R': ["RRRR ", "R   R", "RRRR ", "R  R "],
+        'S': [" SSS ", "S    ", " SSS ", "    S", " SSS "],
+        'T': ["TTTTT", "  T  ", "  T  ", "  T  "],
+        'U': ["U   U", "U   U", "U   U", " UUU "],
+        'V': ["V   V", "V   V", " V V ", "  V  "],
+        'W': ["W   W", "W W W", "WW WW", "W   W"],
+        'X': ["X   X", " X X ", " X X ", "X   X"],
+        'Y': ["Y   Y", " Y Y ", "  Y  ", "  Y  "],
+        'Z': ["ZZZZZ", "   Z ", "  Z  ", "EEEEE"],
+        ' ': ["     ", "     ", "     "],
+        '!': ["  !  ", "  !  ", "     ", "  !  "]
+    };
 
-            btn.disabled = true;
-            statusDiv.className = "";
-            statusDiv.innerText = "Video işleniyor...";
+    function generateTextFrames(text) {
+        const cols = 130;
+        const rows = 65;
+        const totalFrames = 30;
+        const frames = [];
+        text = text.toUpperCase();
 
-            const file = fileInput.files[0];
-            const video = document.createElement('video');
-            video.src = URL.createObjectURL(file);
-            video.muted = true;
-            video.playsInline = true;
+        for (let f = 0; f < totalFrames; f++) {
+            let screen = Array(rows).fill().map(() => Array(cols).fill(' '));
+            let bounce = Math.round(Math.sin(f / 4.0) * 4);
+            let centerY = Math.floor(rows / 2) + bounce;
 
-            try {
-                await new Promise((resolve, reject) => {
-                    video.onloadedmetadata = () => resolve();
-                    video.onerror = () => reject(new Error("Video yüklenemedi."));
-                });
+            let charWidth = 5;
+            let totalWidth = text.length * (charWidth + 1);
+            let startX = Math.max(2, Math.floor((cols - totalWidth) / 2));
 
-                const duration = video.duration;
-                const fps = 10;
-                const totalFrames = Math.min(Math.floor(duration * fps), 350);
-                const frames = [];
-
-                const canvas = document.getElementById('canvas');
-                const ctx = canvas.getContext('2d');
-                const cols = 130;
-                const rows = 65;
-                canvas.width = cols;
-                canvas.height = rows;
-
-                const asciiChars = "@#W$9876543210?!abc;:+-. ";
-
-                for (let i = 0; i < totalFrames; i++) {
-                    statusDiv.innerText = `Kareler işleniyor: ${i + 1} / ${totalFrames}`;
-                    video.currentTime = i / fps;
-                    
-                    await new Promise(resolve => {
-                        const handler = () => {
-                            video.removeEventListener('seeked', handler);
-                            resolve();
-                        };
-                        video.addEventListener('seeked', handler);
-                        setTimeout(resolve, 250);
-                    });
-
-                    ctx.drawImage(video, 0, 0, cols, rows);
-                    const imgData = ctx.getImageData(0, 0, cols, rows).data;
-                    
-                    let asciiImage = "";
-                    for (let y = 0; y < rows; y++) {
-                        for (let x = 0; x < cols; x++) {
-                            const offset = (y * cols + x) * 4;
-                            const r = imgData[offset];
-                            const g = imgData[offset + 1];
-                            const b = imgData[offset + 2];
-                            const avg = (r * 0.299 + g * 0.587 + b * 0.114);
-                            const charIndex = Math.floor((avg / 255) * (asciiChars.length - 1));
-                            asciiImage += asciiChars[charIndex];
+            let currX = startX;
+            for (let i = 0; i < text.length; i++) {
+                let char = text[i];
+                let charGrid = FONT[char] || FONT[' '];
+                for (let r = 0; r < charGrid.length; r++) {
+                    let targetY = centerY + r;
+                    if (targetY >= 0 && targetY < rows) {
+                        let rowStr = charGrid[r];
+                        for (let c = 0; c < rowStr.length; c++) {
+                            let targetX = currX + c;
+                            if (targetX >= 0 && targetX < cols && rowStr[c] !== ' ') {
+                                screen[targetY][targetX] = (f + r) % 2 === 0 ? '#' : '@';
+                            }
                         }
-                        asciiImage += "\n";
                     }
-                    frames.push(asciiImage);
-                    previewDiv.innerText = asciiImage;
                 }
-
-                statusDiv.innerText = "Sunucuya kaydediliyor...";
-                const response = await fetch('/upload', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ path: pathInput, fps: fps, frames: frames })
-                });
-
-                const result = await response.json();
-                if (!response.ok) throw new Error(result.detail || "Kayıt hatası.");
-
-                statusDiv.className = "success";
-                statusDiv.innerHTML = `Başarılı! Terminalde oynat:<br><b>curl https://kendinecurl.onrender.com/${pathInput}</b>`;
-            } catch (error) {
-                statusDiv.className = "";
-                statusDiv.innerText = "Hata: " + error.message;
-            } finally {
-                btn.disabled = false;
+                currX += charWidth + 1;
             }
+
+            let frameStr = "";
+            for (let r = 0; r < rows; r++) {
+                frameStr += screen[r].join('') + "\n";
+            }
+            frames.push(frameStr);
+        }
+        return frames;
+    }
+
+    // 1. Video İşleme
+    async function processVideo() {
+        stopCurrentAnimation();
+        const fileInput = document.getElementById('videoFile');
+        const pathInput = document.getElementById('customPathFile').value.trim();
+        const statusDiv = document.getElementById('status');
+        const previewDiv = document.getElementById('ascii-preview');
+        const btn = document.getElementById('btnVideo');
+
+        if (fileInput.files.length === 0) {
+            statusDiv.innerText = "Lütfen bir video dosyası seçin!";
+            return;
+        }
+        if (!pathInput || !/^[a-zA-Z0-9]+$/.test(pathInput)) {
+            statusDiv.innerText = "Hata: Dizin adı yalnızca harf ve rakam olmalıdır!";
+            return;
         }
 
-        // 2. Metin Animasyonu İşleme
-        async function processText() {
-            const textInput = document.getElementById('textInput').value.trim();
-            const pathInput = document.getElementById('customPathText').value.trim();
-            const statusDiv = document.getElementById('status');
-            const previewDiv = document.getElementById('ascii-preview');
-            const btn = document.getElementById('btnText');
+        btn.disabled = true;
+        statusDiv.className = "";
+        statusDiv.innerText = "Video işleniyor...";
 
-            if (!textInput) {
-                statusDiv.innerText = "Lütfen bir metin girin!";
-                return;
-            }
-            if (!pathInput || !/^[a-zA-Z0-9]+$/.test(pathInput)) {
-                statusDiv.innerText = "Hata: Dizin adı yalnızca harf ve rakam olmalıdır!";
-                return;
+        const file = fileInput.files[0];
+        const video = document.createElement('video');
+        video.src = URL.createObjectURL(file);
+        video.muted = true;
+        video.playsInline = true;
+
+        try {
+            await new Promise((resolve, reject) => {
+                video.onloadedmetadata = () => resolve();
+                video.onerror = () => reject(new Error("Video yüklenemedi."));
+            });
+
+            const duration = video.duration;
+            const fps = 10;
+            const totalFrames = Math.min(Math.floor(duration * fps), 350);
+            const frames = [];
+
+            const canvas = document.getElementById('canvas');
+            const ctx = canvas.getContext('2d');
+            const cols = 130;
+            const rows = 65;
+            canvas.width = cols;
+            canvas.height = rows;
+
+            const asciiChars = "@#W$9876543210?!abc;:+-. ";
+
+            for (let i = 0; i < totalFrames; i++) {
+                statusDiv.innerText = `Kareler işleniyor: ${i + 1} / ${totalFrames}`;
+                video.currentTime = i / fps;
+                
+                await new Promise(resolve => {
+                    const handler = () => {
+                        video.removeEventListener('seeked', handler);
+                        resolve();
+                    };
+                    video.addEventListener('seeked', handler);
+                    setTimeout(resolve, 250);
+                });
+
+                ctx.drawImage(video, 0, 0, cols, rows);
+                const imgData = ctx.getImageData(0, 0, cols, rows).data;
+                
+                let asciiImage = "";
+                for (let y = 0; y < rows; y++) {
+                    for (let x = 0; x < cols; x++) {
+                        const offset = (y * cols + x) * 4;
+                        const r = imgData[offset];
+                        const g = imgData[offset + 1];
+                        const b = imgData[offset + 2];
+                        const avg = (r * 0.299 + g * 0.587 + b * 0.114);
+                        const charIndex = Math.floor((avg / 255) * (asciiChars.length - 1));
+                        asciiImage += asciiChars[charIndex];
+                    }
+                    asciiImage += "\n";
+                }
+                frames.push(asciiImage);
+                previewDiv.innerText = asciiImage;
             }
 
-            btn.disabled = true;
+            statusDiv.innerText = "Sunucuya kaydediliyor...";
+            const response = await fetch('/upload', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ path: pathInput, fps: fps, frames: frames })
+            });
+
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.detail || "Kayıt hatası.");
+
+            statusDiv.className = "success";
+            statusDiv.innerHTML = `Başarılı! Terminalde oynat:<br><b>curl https://kendinecurl.onrender.com/${pathInput}</b>`;
+        } catch (error) {
             statusDiv.className = "";
-            statusDiv.innerText = "Zıplayan metin animasyonu oluşturuluyor...";
-
-            try {
-                const response = await fetch('/upload-text', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ text: textInput, path: pathInput })
-                });
-
-                const result = await response.json();
-                if (!response.ok) throw new Error(result.detail || "Metin işleme hatası.");
-
-                statusDiv.className = "success";
-                statusDiv.innerHTML = `Zıplayan metin animasyonu başarıyla oluşturuldu!<br><b>curl https://kendinecurl.onrender.com/${pathInput}</b>`;
-                previewDiv.innerText = "Metin animasyonu sunucuda hazırlandı!";
-            } catch (error) {
-                statusDiv.className = "";
-                statusDiv.innerText = "Hata: " + error.message;
-            } finally {
-                btn.disabled = false;
-            }
+            statusDiv.innerText = "Hata: " + error.message;
+        } finally {
+            btn.disabled = false;
         }
-    </script>
-</body>
-</html>
+    }
+
+    // 2. Metin Animasyonu İşleme ve Canlı Oynatma
+    async function processText() {
+        stopCurrentAnimation();
+        const textInput = document.getElementById('textInput').value.trim();
+        const pathInput = document.getElementById('customPathText').value.trim();
+        const statusDiv = document.getElementById('status');
+        const previewDiv = document.getElementById('ascii-preview');
+        const btn = document.getElementById('btnText');
+
+        if (!textInput) {
+            statusDiv.innerText = "Lütfen bir metin girin!";
+            return;
+        }
+        if (!pathInput || !/^[a-zA-Z0-9]+$/.test(pathInput)) {
+            statusDiv.innerText = "Hata: Dizin adı yalnızca harf ve rakam olmalıdır!";
+            return;
+        }
+
+        btn.disabled = true;
+        statusDiv.className = "";
+        statusDiv.innerText = "Zıplayan animasyon hazırlanıyor ve önizleme başlatılıyor...";
+
+        // Tarayıcıda anında oynatmak için kareleri üret
+        const frames = generateTextFrames(textInput);
+        
+        // Tarayıcıda zıplayan efektle GIF gibi oynat
+        let frameIdx = 0;
+        currentAnimationInterval = setInterval(() => {
+            previewDiv.innerText = frames[frameIdx];
+            frameIdx = (frameIdx + 1) % frames.length;
+        }, 100); // 10 FPS animasyon hızı
+
+        try {
+            const response = await fetch('/upload-text', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text: textInput, path: pathInput })
+            });
+
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.detail || "Metin işleme hatası.");
+
+            statusDiv.className = "success";
+            statusDiv.innerHTML = `Metin animasyonu başarıyla oluşturuldu ve kaydedildi!<br><b>curl https://kendinecurl.onrender.com/${pathInput}</b>`;
+        } catch (error) {
+            statusDiv.className = "";
+            statusDiv.innerText = "Hata: " + error.message;
+        } finally {
+            btn.disabled = false;
+        }
+    }
+</script>
