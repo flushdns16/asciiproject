@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ASCII Matrix Streamer // Video & Text Art</title>
+    <title>ASCII Matrix Streamer // Hacker Console</title>
     <style>
         body {
             background-color: #0d0208;
@@ -110,7 +110,6 @@
             font-weight: bold;
             word-break: break-all;
         }
-        /* Devasa, Sinematik Matrix Terminal Önizleme Ekranı */
         #ascii-preview {
             width: 100%;
             max-width: 1100px;
@@ -129,6 +128,9 @@
             box-sizing: border-box;
             min-height: 480px;
         }
+        /* Web önizlemesinde beyaz yazıyı parlatmak için stil */
+        .matrix-rain { color: #00ff66; }
+        .matrix-text { color: #ffffff; font-weight: bold; text-shadow: 0 0 5px #ffffff; }
     </style>
 </head>
 <body>
@@ -224,9 +226,9 @@
         };
 
         function generateMatrixFrames(text) {
-            const cols = 120;
-            const rows = 50;
-            const totalFrames = 40;
+            const cols = 100;
+            const rows = 40;
+            const totalFrames = 30;
             const frames = [];
             text = text.toUpperCase();
 
@@ -234,21 +236,21 @@
             const chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ@#$*&";
 
             for (let f = 0; f < totalFrames; f++) {
-                let screen = Array(rows).fill().map(() => Array(cols).fill(' '));
+                let screenChars = Array(rows).fill().map(() => Array(cols).fill(' '));
+                let screenTypes = Array(rows).fill().map(() => Array(cols).fill(0));
                 
-                // Matrix yağmuru
                 for (let x = 0; x < cols; x++) {
                     let dropY = drops[x];
                     for (let y = 0; y < rows; y++) {
                         let dist = (y - dropY + rows) % rows;
-                        if (dist < 15) {
-                            screen[y][x] = chars[Math.floor(Math.random() * chars.length)];
+                        if (dist < 12) {
+                            screenChars[y][x] = chars[Math.floor(Math.random() * chars.length)];
+                            screenTypes[y][x] = 0;
                         }
                     }
                     drops[x] = (drops[x] + 1) % rows;
                 }
 
-                // Merkezde net yazı
                 let textLines = 5;
                 let charW = 5;
                 let totalW = text.length * (charW + 1);
@@ -266,7 +268,8 @@
                             for (let c = 0; c < line.length; c++) {
                                 let tx = currX + c;
                                 if (tx >= 0 && tx < cols && line[c] !== ' ') {
-                                    screen[ty][tx] = line[c]; // Yazıyı akışın üstüne net yaz
+                                    screenChars[ty][tx] = line[c];
+                                    screenTypes[ty][tx] = 1; // Beyaz yazı
                                 }
                             }
                         }
@@ -274,11 +277,25 @@
                     currX += charW + 1;
                 }
 
-                let str = "";
+                // HTML önizlemesi için span tagleri ile renk ayrımı
+                let htmlStr = "";
                 for (let r = 0; r < rows; r++) {
-                    str += screen[r].join('') + "\n";
+                    let lineHtml = "";
+                    let currentType = -1;
+                    for (let c = 0; c < cols; c++) {
+                        let t = screenTypes[r][c];
+                        let char = screenChars[r][c];
+                        if (t !== currentType) {
+                            if (currentType !== -1) lineHtml += "</span>";
+                            lineHtml += t === 1 ? '<span class="matrix-text">' : '<span class="matrix-rain">';
+                            currentType = t;
+                        }
+                        lineHtml += char === '<' ? '&lt;' : (char === '>' ? '&gt;' : char);
+                    }
+                    if (currentType !== -1) lineHtml += "</span>";
+                    htmlStr += lineHtml + "\n";
                 }
-                frames.push(str);
+                frames.push(htmlStr);
             }
             return frames;
         }
@@ -404,14 +421,13 @@
 
             btn.disabled = true;
             statusDiv.className = "";
-            statusDiv.innerText = "Matrix akışı ve net yazı oluşturuluyor...";
+            statusDiv.innerText = "Matrix akışı ve net beyaz yazı oluşturuluyor...";
 
             const frames = generateMatrixFrames(textInput);
             
-            // Canlı önizleme
             let idx = 0;
             currentInterval = setInterval(() => {
-                previewDiv.innerText = frames[idx];
+                previewDiv.innerHTML = frames[idx]; // innerHTML ile renkli spanleri destekliyoruz
                 idx = (idx + 1) % frames.length;
             }, 100);
 
