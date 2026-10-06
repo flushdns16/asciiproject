@@ -1,11 +1,10 @@
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException
 from fastapi.responses import PlainTextResponse, StreamingResponse
 from pydantic import BaseModel
 import asyncio
 import json
 import sqlite3
 import random
-import shutil
 import cv2
 
 app = FastAPI()
@@ -19,8 +18,7 @@ def init_db():
             path TEXT PRIMARY KEY,
             fps INTEGER,
             frames TEXT,
-            is_text INTEGER DEFAULT 0,
-            raw_text TEXT
+            is_text INTEGER DEFAULT 0
         )
     ''')
     conn.commit()
@@ -46,8 +44,8 @@ async def upload_video(video: AsciiVideo):
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
     cursor.execute(
-        "INSERT OR REPLACE INTO videos (path, fps, frames, is_text, raw_text) VALUES (?, ?, ?, ?, ?)",
-        (clean_path, video.fps, json.dumps(video.frames), 0, "")
+        "INSERT OR REPLACE INTO videos (path, fps, frames, is_text) VALUES (?, ?, ?, ?)",
+        (clean_path, video.fps, json.dumps(video.frames), 0)
     )
     conn.commit()
     conn.close()
@@ -64,11 +62,10 @@ async def upload_text(data: AsciiTextRequest):
     if not text:
         raise HTTPException(status_code=400, detail="Metin boş olamaz.")
 
-    # Standart ideal matris boyutu (Tarayıcı için)
-    cols = 100
+    cols = 90
     rows = 35
-    total_frames = 20
-    fps = 12
+    total_frames = 25
+    fps = 10
     frames = []
 
     FONT = {
@@ -153,8 +150,8 @@ async def upload_text(data: AsciiTextRequest):
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
     cursor.execute(
-        "INSERT OR REPLACE INTO videos (path, fps, frames, is_text, raw_text) VALUES (?, ?, ?, ?, ?)",
-        (clean_path, fps, json.dumps(frames), 1, text)
+        "INSERT OR REPLACE INTO videos (path, fps, frames, is_text) VALUES (?, ?, ?, ?)",
+        (clean_path, fps, json.dumps(frames), 1)
     )
     conn.commit()
     conn.close()
@@ -162,7 +159,7 @@ async def upload_text(data: AsciiTextRequest):
     return {"message": "Başarılı", "saved_path": clean_path}
 
 @app.get("/{path}")
-async def stream_video(path: str, request: Request):
+async def stream_video(path: str):
     path_clean = path.strip().lower()
     
     if path_clean == "debug":
@@ -187,91 +184,11 @@ async def stream_video(path: str, request: Request):
     is_text = row[2]
     delay = 1.0 / fps
 
-    user_agent = request.headers.get("user-agent", "").lower()
-    if "curl" not in user_agent and "wget" not in user_agent and is_text:
-        # Tarayıcı ve mobil için kusursuz esnek HTML wrapper (bozulmaz, ortalanmış tasarım)
-        html_content = f"""
-        <!DOCTYPE html>
-        <html lang="tr">
-        <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Matrix Terminal // {path_clean}</title>
-            <style>
-                body {{
-                    background-color: #000;
-                    color: #00ff66;
-                    font-family: 'Courier New', Courier, monospace;
-                    margin: 0;
-                    display: flex;
-                    justify-content: center;
-                    align-items: center;
-                    height: 100vh;
-                    overflow: hidden;
-                }}
-                #terminal {{
-                    font-size: 1.4vw;
-                    line-height: 1.5vw;
-                    white-space: pre;
-                    background: #000;
-                    padding: 20px;
-                    border: 2px solid #00ff66;
-                    border-radius: 6px;
-                    box-shadow: 0 0 40px rgba(0, 255, 102, 0.35);
-                }}
-                @media (max-width: 768px) {{
-                    #terminal {{
-                        font-size: 2.1vh;
-                        line-height: 2.2vh;
-                        padding: 10px;
-                    }}
-                }}
-                .matrix-rain {{ color: #00ff66; }}
-                .matrix-text {{ color: #ffffff; font-weight: bold; text-shadow: 0 0 8px #ffffff; }}
-            </style>
-        </head>
-        <body>
-            <div id="terminal">Yükleniyor...</div>
-            <script>
-                const frames = {json.dumps(frames)};
-                let idx = 0;
-                const term = document.getElementById('terminal');
-                
-                setInterval(() => {{
-                    term.innerHTML = frames[idx];
-                    idx = (idx + 1) % frames.length;
-                }}, {int(delay * 1000)});
-            </script>
-        </body>
-        </html>
-        """
-        return PlainTextResponse(html_content, media_type="text/html")
-
-    # Terminal için dinamik terminal boyutuna (columns x lines) göre ölçeklenen akış
     async def frame_generator():
         try:
             while True:
                 for frame in frames:
-                    # Terminalin o anki genişlik ve yüksekliğini al
-                    term_size = shutil.get_terminal_size((80, 24))
-                    t_cols = term_size.columns
-                    t_rows = term_size.lines
-                    
-                    # Çerçeveyi terminal boyutuna uyduracak şekilde satır satır yeniden kırp/uzat
-                    lines = frame.split("\n")
-                    adjusted_frame = ""
-                    for r_idx in range(t_rows - 1):
-                        if r_idx < len(lines):
-                            line = lines[r_idx]
-                            # Genişliği terminal sütununa göre sabitle
-                            if len(line) > t_cols:
-                                adjusted_frame += line[:t_cols] + "\n"
-                            else:
-                                adjusted_frame += line.ljust(t_cols) + "\n"
-                        else:
-                            adjusted_frame += " " * t_cols + "\n"
-
-                    yield ("\033[H\033[J" + adjusted_frame).encode('utf-8')
+                    yield ("\033[H\033[J" + frame).encode('utf-8')
                     await asyncio.sleep(delay)
                 if not is_text:
                     break
