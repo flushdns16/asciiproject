@@ -1,5 +1,4 @@
 fastapi
 uvicorn
 pydantic
-yt-dlp
 opencv-python-headless
