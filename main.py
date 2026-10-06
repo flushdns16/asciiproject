@@ -1,69 +1,58 @@
-import json
-import asyncio
-import redis.asyncio as redis
-from typing import List
-from fastapi import FastAPI, Request, HTTPException
-from fastapi.responses import StreamingResponse, HTMLResponse, FileResponse
+from fastapi import FastAPI, HTTPException
+from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel
+import asyncio
+import json
 
 app = FastAPI()
 
-# --- ÖNEMLİ: KENDİ UPSTASH REDIS LİNKİNİZİ BURAYA YAPIŞTIRIN ---
-# Örnek: "rediss://default:sifreniz@karmasik-isim.upstash.io:30000"
-REDIS_URL="rediss://default:********@neat-aphid-205293.upstash.io:6379"
-
-redis_client = redis.from_url(REDIS_URL, decode_responses=True)
+# Bellekte (RAM) video verilerini tutacağımız sözlük
+MEMORY_DB = {}
 
 class AsciiVideo(BaseModel):
     path: str
     fps: int
-    frames: List[str]
+    frames: list
 
-# Siteye ilk girildiğinde index.html sayfasını göster
-@app.get("/")
-async def get_homepage():
-    return FileResponse("index.html")
-
-# Kullanıcı web sitesinden videoyu dönüştürüp gönderdiğinde burası çalışır
 @app.post("/upload")
 async def upload_video(video: AsciiVideo):
     if not video.path.isalnum():
-        raise HTTPException(status_code=400, detail="Sadece harf ve rakam")
+        raise HTTPException(status_code=400, detail="Sadece harf ve rakam kullanabilirsiniz.")
+    
     if len(video.frames) > 900:
-        raise HTTPException(status_code=400, detail="Video çok uzun")
+        raise HTTPException(status_code=400, detail="Video çok uzun (Max 30 saniye)")
 
-    # Redis'e kaydet (1 haftalık ömür - 604800 saniye)
-    redis_key = f"ascii:{video.path.lower()}"
-    payload = json.dumps({"fps": video.fps, "frames": video.frames})
-    await redis_client.setex(redis_key, 604800, payload)
+    # Veriyi doğrudan RAM'e kaydediyoruz
+    MEMORY_DB[video.path.lower()] = {
+        "fps": video.fps,
+        "frames": video.frames
+    }
     
     return {"message": "Başarılı"}
 
-# Akış Jeneratörü
-async def frame_streamer(frames: List[str], fps: int):
-    clear = "\033[2J\033[H"
+@app.get("/{path}", response_class=PlainTextResponse)
+async def stream_video(path: str):
+    path_clean = path.lower()
+    if path_clean not in MEMORY_DB:
+        raise HTTPException(status_code=404, detail="Veri paketi bulunamadı.")
+    
+    video_data = MEMORY_DB[path_clean]
+    fps = video_data["fps"]
+    frames = video_data["frames"]
     delay = 1.0 / fps
-    try:
-        while True: 
+
+    async def frame_generator():
+        try:
             for frame in frames:
-                yield f"{clear}{frame}".encode('utf-8')
+                # Terminali temizle ve çerçeveyi bas
+                yield "\033[H\033[J" + frame
                 await asyncio.sleep(delay)
-    except asyncio.CancelledError:
-        pass
+        except asyncio.CancelledError:
+            pass
 
-# curl komutu atıldığında animasyonu başlatan kısım
-@app.get("/{path}")
-async def stream_video(path: str, request: Request):
-    data = await redis_client.get(f"ascii:{path.lower()}")
-    if not data:
-        return HTMLResponse("<h2>Animasyon bulunamadı.</h2>", status_code=404)
+    return frame_generator()
 
-    user_agent = request.headers.get("user-agent", "").lower()
-    if "curl" not in user_agent:
-        return HTMLResponse(f"<p>Terminalden şunu yazın: <br><code>curl {request.url}</code></p>")
-
-    video_data = json.loads(data)
-    return StreamingResponse(
-        frame_streamer(video_data["frames"], video_data["fps"]),
-        media_type="text/plain"
-    )
+@app.get("/")
+def read_index():
+    with open("index.html", "r", encoding="utf-8") as f:
+        return PlainTextResponse(f.read(), media_type="text/html")
