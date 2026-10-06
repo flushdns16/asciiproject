@@ -62,10 +62,10 @@ async def upload_text(data: AsciiTextRequest):
     if not text:
         raise HTTPException(status_code=400, detail="Metin boş olamaz.")
 
-    cols = 90
-    rows = 35
-    total_frames = 25
-    fps = 10
+    cols = 80
+    rows = 30
+    total_frames = 20  # Daha hafif kare sayısı ile anında tepki
+    fps = 12
     frames = []
 
     FONT = {
@@ -110,7 +110,7 @@ async def upload_text(data: AsciiTextRequest):
             drop_y = drops[x]
             for y in range(rows):
                 dist = (y - drop_y + rows) % rows
-                if dist < 12:
+                if dist < 10:
                     screen_chars[y][x] = random.choice(matrix_chars)
                     screen_types[y][x] = 0
             drops[x] = (drops[x] + 1) % rows
@@ -188,7 +188,7 @@ async def stream_video(path: str):
         try:
             while True:
                 for frame in frames:
-                    # Terminalde buffer donmasını engellemek için anlık flush karakteri ile yolla
+                    # Ekranı temizleyip kareyi anında bas, chunk biriktirmeyi önle
                     yield "\033[H\033[J" + frame
                     await asyncio.sleep(delay)
                 if not is_text:
@@ -196,11 +196,15 @@ async def stream_video(path: str):
         except asyncio.CancelledError:
             pass
 
-    # X-Accel-Buffering başlığı nginx/proxy tamponlamasını kapatır, curl donmaz
+    # Tamponlamayı (buffering) tamamen devre dışı bırakan kritik başlıklar
     return StreamingResponse(
         frame_generator(), 
         media_type="text/plain",
-        headers={"X-Accel-Buffering": "no"}
+        headers={
+            "X-Accel-Buffering": "no",
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive"
+        }
     )
 
 @app.get("/")
