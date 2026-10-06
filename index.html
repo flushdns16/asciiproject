@@ -3,203 +3,158 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ASCII.LIVE - UPLINK</title>
-    <link href="[https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap](https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap)" rel="stylesheet">
+    <title>ASCII Video Encoder & Terminal Streamer</title>
     <style>
-        body { 
-            font-family: 'Share Tech Mono', monospace; 
-            background-color: #050505; 
-            color: #00ff41;
-            max-width: 650px; 
-            margin: 2rem auto; 
-            padding: 1rem; 
-            text-shadow: 0 0 3px rgba(0, 255, 65, 0.5);
+        body {
+            background-color: #0d0208;
+            color: #00ff66;
+            font-family: 'Courier New', Courier, monospace;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
         }
-        .card { 
-            background: #000; 
-            padding: 2rem; 
-            border: 1px solid #00ff41; 
-            box-shadow: 0 0 15px rgba(0, 255, 65, 0.15); 
-            position: relative;
-        }
-        .card::before {
-            content: "[ SYSTEM.UPLINK.READY ]";
-            position: absolute;
-            top: -10px;
-            left: 20px;
-            background: #050505;
-            padding: 0 10px;
-            font-size: 14px;
-        }
-        h2 {
+        .container {
+            border: 1px solid #00ff66;
+            padding: 30px;
+            background-color: #121212;
+            box-shadow: 0 0 20px rgba(0, 255, 102, 0.2);
+            border-radius: 8px;
+            width: 400px;
             text-align: center;
-            letter-spacing: 3px;
-            border-bottom: 1px dashed #00ff41;
-            padding-bottom: 15px;
-            margin-top: 0;
         }
-        input[type="file"], input[type="text"] { 
-            display: block; 
-            width: 100%; 
-            margin: 15px 0; 
-            padding: 12px; 
-            box-sizing: border-box; 
-            background: rgba(0, 255, 65, 0.05); 
-            border: 1px solid #00ff41;
-            color: #00ff41;
-            font-family: 'Share Tech Mono', monospace;
-            font-size: 16px;
+        h0, h2 {
+            color: #00ff66;
+            text-shadow: 0 0 5px rgba(0, 255, 102, 0.5);
         }
-        input:focus {
-            outline: none;
-            box-shadow: 0 0 10px rgba(0, 255, 65, 0.4);
-            background: rgba(0, 255, 65, 0.1);
+        input, button {
+            background-color: #000;
+            color: #00ff66;
+            border: 1px solid #00ff66;
+            padding: 10px;
+            margin: 10px 0;
+            width: 100%;
+            box-sizing: border-box;
+            font-family: 'Courier New', Courier, monospace;
+            border-radius: 4px;
         }
-        button { 
-            display: block; 
-            width: 100%; 
-            background: transparent; 
-            color: #00ff41; 
-            border: 1px solid #00ff41; 
-            padding: 15px; 
-            font-size: 18px;
-            cursor: pointer; 
-            font-family: 'Share Tech Mono', monospace;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            transition: all 0.2s;
-        }
-        button:hover:not(:disabled) {
-            background: #00ff41;
+        button:hover {
+            background-color: #00ff66;
             color: #000;
-            box-shadow: 0 0 15px #00ff41;
+            cursor: pointer;
             font-weight: bold;
         }
-        button:disabled { 
-            border-color: #005517; 
-            color: #005517; 
-            cursor: not-allowed; 
+        #status {
+            margin-top: 15px;
+            font-size: 14px;
+            color: #ff0055;
         }
-        #status { margin-top: 15px; font-size: 14px; min-height: 20px; }
-        #status::before { content: "root@ascii:~# "; color: #fff; }
-        .terminal-header {
-            background: #00ff41;
-            color: #000;
-            padding: 5px 10px;
-            font-weight: bold;
-            margin-top: 2rem;
-            display: inline-block;
-            border: 1px solid #00ff41;
+        .success {
+            color: #00ff66 !important;
         }
-        pre { 
-            background: #000; 
-            color: #00ff41; 
-            padding: 15px; 
-            overflow: hidden; 
-            font-size: 9px; 
-            line-height: 9px; 
-            font-family: monospace; 
-            border: 1px solid #005517;
-            margin-top: 0;
+        #ascii-preview {
+            font-size: 6px;
+            line-height: 6px;
+            white-space: pre;
+            background: #000;
+            padding: 10px;
+            margin-top: 15px;
+            max-height: 150px;
+            overflow: hidden;
+            border: 1px dashed #333;
         }
-        #hiddenCanvas, #hiddenVideo { display: none; }
     </style>
 </head>
 <body>
 
-<div class="card">
-    <h2>/ DATA.ENCODER /</h2>
-    <input type="file" id="videoInput" accept="video/mp4, video/webm, image/gif">
-    <input type="text" id="pathInput" placeholder="> /hedef_dizin (örn: matrix)" maxlength="20">
-    <button id="processBtn">SİSTEME ENJEKTE ET</button>
-    <p id="status">Bekleniyor...</p>
-</div>
+    <div class="container">
+        <h2>ASCII TERMINAL STREAM</h2>
+        <p style="font-size: 12px; color: #888;">Videoyu seç, özel yolunu belirle ve sisteme enjekte et.</p>
+        
+        <input type="file" id="videoFile" accept="video/*">
+        <input type="text" id="customPath" placeholder="Örn: mytm1 (Sadece harf/rakam)">
+        
+        <button onclick="processVideo()">SİSTEME ENJEKTE ET</button>
+        
+        <div id="status"></div>
+        <div id="ascii-preview"></div>
+    </div>
 
-<div class="terminal-header">CANLI İZLEME EKRANI</div>
-<pre id="preview"></pre>
+    <canvas id="canvas" style="display:none;"></canvas>
 
-<video id="hiddenVideo" muted></video>
-<canvas id="hiddenCanvas"></canvas>
+    <script>
+        async function processVideo() {
+            const fileInput = document.getElementById('videoFile');
+            const pathInput = document.getElementById('customPath').value.trim();
+            const statusDiv = document.getElementById('status');
+            const previewDiv = document.getElementById('ascii-preview');
 
-<script>
-    const videoInput = document.getElementById('videoInput');
-    const pathInput = document.getElementById('pathInput');
-    const processBtn = document.getElementById('processBtn');
-    const preview = document.getElementById('preview');
-    const status = document.getElementById('status');
-    const video = document.getElementById('hiddenVideo');
-    const canvas = document.getElementById('hiddenCanvas');
-    const ctx = canvas.getContext('2d', { willReadFrequently: true });
-    
-    const ASCII_CHARS = " .:-=+*#%@"; 
-    const TARGET_WIDTH = 80; 
-    const FPS = 10; 
-
-    processBtn.addEventListener('click', async () => {
-        const file = videoInput.files[0];
-        const pathName = pathInput.value.trim().toLowerCase();
-
-        if (!file || !pathName) { alert("DİKKAT: Veri paketi ve dizin adı zorunludur."); return; }
-
-        processBtn.disabled = true;
-        status.textContent = "Veri paketleri analiz ediliyor...";
-        const fileUrl = URL.createObjectURL(file);
-        video.src = fileUrl;
-
-        video.onloadedmetadata = async () => {
-            if (video.duration > 300) {
-                status.textContent = "HATA: Boyut sınırı aşıldı! (Max 10sn)";
-                processBtn.disabled = false; return;
+            if (fileInput.files.length === 0) {
+                statusDiv.innerText = "Lütfen bir video seçin!";
+                return;
             }
 
-            const targetHeight = Math.floor((video.videoHeight / video.videoWidth) * TARGET_WIDTH * 0.5);
-            canvas.width = TARGET_WIDTH; canvas.height = targetHeight;
-            const totalFrames = Math.floor(video.duration * FPS);
-            const framesArray = [];
+            if (!pathInput || !/^[a-zA-Z0-9]+$/.test(pathInput)) {
+                statusDiv.innerText = "Hata: Yol sadece harf ve rakamlardan oluşmalıdır!";
+                return;
+            }
 
-            status.textContent = `Şifreleniyor... Blok: 0 / ${totalFrames}`;
+            statusDiv.className = "";
+            statusDiv.innerText = "Video işleniyor ve ASCII'ye çevriliyor...";
 
-            for (let i = 0; i < totalFrames; i++) {
-                video.currentTime = i / FPS;
-                await new Promise(resolve => video.onseeked = resolve);
-                ctx.drawImage(video, 0, 0, TARGET_WIDTH, targetHeight);
-                const frameData = ctx.getImageData(0, 0, TARGET_WIDTH, targetHeight).data;
-                let asciiFrame = "";
+            const file = fileInput.files[0];
+            const video = document.createElement('video');
+            video.src = URL.createObjectURL(file);
+            video.muted = true;
 
-                for (let y = 0; y < targetHeight; y++) {
-                    for (let x = 0; x < TARGET_WIDTH; x++) {
-                        const offset = (y * TARGET_WIDTH + x) * 4;
-                        const brightness = (frameData[offset] * 0.299 + frameData[offset+1] * 0.587 + frameData[offset+2] * 0.114);
-                        asciiFrame += ASCII_CHARS[Math.floor((brightness / 255) * (ASCII_CHARS.length - 1))];
+            video.onloadedmetadata = async () => {
+                const duration = video.duration;
+                if (duration > 30) {
+                    statusDiv.innerText = "Hata: Video 30 saniyeden uzun olamaz!";
+                    return;
+                }
+
+                const fps = 10; // Terminal akışı için 10 FPS idealdir
+                const totalFrames = Math.floor(duration * fps);
+                const frames = [];
+
+                const canvas = document.getElementById('canvas');
+                const ctx = canvas.getContext('2d');
+                
+                // Terminal çözünürlüğü (Genişlik x Yükseklik)
+                const cols = 80;
+                const rows = 40;
+                canvas.width = cols;
+                canvas.height = rows;
+
+                const asciiChars = "@#W$9876543210?!abc;:+-. ";
+
+                for (let i = 0; i < totalFrames; i++) {
+                    video.currentTime = i / fps;
+                    await new Promise(resolve => {
+                        video.onseeked = resolve;
+                    });
+
+                    ctx.drawImage(video, 0, 0, cols, rows);
+                    const imgData = ctx.getImageData(0, 0, cols, rows).data;
+                    
+                    let asciiImage = "";
+                    for (let y = 0; y < rows; y++) {
+                        for (let x = 0; x < cols; x++) {
+                            const offset = (y * cols + x) * 4;
+                            const r = imgData[offset];
+                            const g = imgData[offset + 1];
+                            const b = imgData[offset + 2];
+                            const avg = (r + g + b) / 3;
+                            const charIndex = Math.floor((avg / 255) * (asciiChars.length - 1));
+                            asciiImage += asciiChars[charIndex];
+                        }
+                        asciiImage += "\n";
                     }
-                    asciiFrame += "\n";
+                    frames.push(asciiImage);
+                    previewDiv.innerText = asciiImage; // Anlık önizleme
                 }
-                framesArray.push(asciiFrame);
-                preview.textContent = asciiFrame; 
-                
-                if(i % 5 === 0) status.textContent = `Şifreleniyor... Blok: ${i} / ${totalFrames}`;
-            }
 
-            status.textContent = "Uzak sunucuya veri aktarılıyor...";
-            
-            try {
-                const response = await fetch("/upload", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ path: pathName, fps: FPS, frames: framesArray })
-                });
-                
-                if (response.ok) {
-                    status.textContent = `BAĞLANTI KURULDU! Test komutu: curl https://${window.location.host}/${pathName}`;
-                } else {
-                    status.textContent = "HATA: Sunucu bağlantıyı reddetti.";
-                }
-            } catch (error) {
-                status.textContent = "CRITICAL HATA: Bağlantı kesildi.";
-            }
-            processBtn.disabled = false;
-        };
-    });
-</script>
-</body>
-</html>
+                statusDiv.innerText = "Sunucuya yükleniyor...";
