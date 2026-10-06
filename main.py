@@ -62,9 +62,9 @@ async def upload_text(data: AsciiTextRequest):
     if not text:
         raise HTTPException(status_code=400, detail="Metin boş olamaz.")
 
-    cols = 100
-    rows = 40
-    total_frames = 30
+    cols = 90
+    rows = 35
+    total_frames = 25
     fps = 10
     frames = []
 
@@ -103,21 +103,18 @@ async def upload_text(data: AsciiTextRequest):
     matrix_chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ@#$*&"
 
     for f in range(total_frames):
-        # Matriste her karakterin hangi gruba ait olduğunu tutacağız (0: Matrix Yeşil, 1: Beyaz Yazı)
         screen_chars = [[" " for _ in range(cols)] for _ in range(rows)]
         screen_types = [[0 for _ in range(cols)] for _ in range(rows)]
 
-        # 1. Matrix Yağmuru (Tip 0 -> Yeşil)
         for x in range(cols):
             drop_y = drops[x]
             for y in range(rows):
-                dist = (y - drop_y) % rows
+                dist = (y - drop_y + rows) % rows
                 if dist < 12:
                     screen_chars[y][x] = random.choice(matrix_chars)
                     screen_types[y][x] = 0
             drops[x] = (drops[x] + 1) % rows
 
-        # 2. Merkezdeki Net Yazı (Tip 1 -> Beyaz)
         text_lines = 5
         char_w = 5
         total_w = len(text) * (char_w + 1)
@@ -134,11 +131,9 @@ async def upload_text(data: AsciiTextRequest):
                         tx = curr_x + c_idx
                         if 0 <= tx < cols and pixel != ' ':
                             screen_chars[ty][tx] = pixel
-                            screen_types[ty][tx] = 1  # Beyaz yazı bayrağı
+                            screen_types[ty][tx] = 1
             curr_x += char_w + 1
 
-        # ANSI Renk Kodlarıyla kareyi stringe dök
-        # Yeşil: \033[32m, Beyaz: \033[97m (Parlak Beyaz)
         frame_str = ""
         current_color = ""
         for r in range(rows):
@@ -191,16 +186,22 @@ async def stream_video(path: str):
 
     async def frame_generator():
         try:
-            while True:  # METİN İÇİN SONSUZ DÖNGÜ (LOOP)
+            while True:
                 for frame in frames:
+                    # Terminalde buffer donmasını engellemek için anlık flush karakteri ile yolla
                     yield "\033[H\033[J" + frame
                     await asyncio.sleep(delay)
-                if not is_text:  # Eğer video ise bir kez oynat ve bitir
+                if not is_text:
                     break
         except asyncio.CancelledError:
             pass
 
-    return StreamingResponse(frame_generator(), media_type="text/plain")
+    # X-Accel-Buffering başlığı nginx/proxy tamponlamasını kapatır, curl donmaz
+    return StreamingResponse(
+        frame_generator(), 
+        media_type="text/plain",
+        headers={"X-Accel-Buffering": "no"}
+    )
 
 @app.get("/")
 def read_index():
