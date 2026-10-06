@@ -5,6 +5,7 @@ import asyncio
 import json
 import sqlite3
 import random
+import shutil
 import cv2
 
 app = FastAPI()
@@ -63,9 +64,9 @@ async def upload_text(data: AsciiTextRequest):
     if not text:
         raise HTTPException(status_code=400, detail="Metin boş olamaz.")
 
-    # Standart geniş format (Terminal tam ekranı ve mobil için optimize)
-    cols = 120
-    rows = 40
+    # Standart ideal matris boyutu (Tarayıcı için)
+    cols = 100
+    rows = 35
     total_frames = 20
     fps = 12
     frames = []
@@ -186,10 +187,9 @@ async def stream_video(path: str, request: Request):
     is_text = row[2]
     delay = 1.0 / fps
 
-    # Eğer istek tarayıcıdan (User-Agent içinde curl geçmiyorsa) geliyorsa, şahane bir HTML konsol wrapper içinde sunalım
     user_agent = request.headers.get("user-agent", "").lower()
     if "curl" not in user_agent and "wget" not in user_agent and is_text:
-        # Mobil ve masaüstü tarayıcılar için tam ekran esnek responsive HTML görünüm
+        # Tarayıcı ve mobil için kusursuz esnek HTML wrapper (bozulmaz, ortalanmış tasarım)
         html_content = f"""
         <!DOCTYPE html>
         <html lang="tr">
@@ -210,13 +210,21 @@ async def stream_video(path: str, request: Request):
                     overflow: hidden;
                 }}
                 #terminal {{
-                    font-size: min(1.8vw, 1.8vh);
-                    line-height: min(1.9vw, 1.9vh);
+                    font-size: 1.4vw;
+                    line-height: 1.5vw;
                     white-space: pre;
                     background: #000;
-                    padding: 10px;
-                    border: 1px solid #00ff66;
-                    box-shadow: 0 0 30px rgba(0, 255, 102, 0.3);
+                    padding: 20px;
+                    border: 2px solid #00ff66;
+                    border-radius: 6px;
+                    box-shadow: 0 0 40px rgba(0, 255, 102, 0.35);
+                }}
+                @media (max-width: 768px) {{
+                    #terminal {{
+                        font-size: 2.1vh;
+                        line-height: 2.2vh;
+                        padding: 10px;
+                    }}
                 }}
                 .matrix-rain {{ color: #00ff66; }}
                 .matrix-text {{ color: #ffffff; font-weight: bold; text-shadow: 0 0 8px #ffffff; }}
@@ -229,7 +237,6 @@ async def stream_video(path: str, request: Request):
                 let idx = 0;
                 const term = document.getElementById('terminal');
                 
-                // HTML karelerini temizleyip tarayıcı içi esnek gösterim
                 setInterval(() => {{
                     term.innerHTML = frames[idx];
                     idx = (idx + 1) % frames.length;
@@ -240,12 +247,31 @@ async def stream_video(path: str, request: Request):
         """
         return PlainTextResponse(html_content, media_type="text/html")
 
-    # Terminal için ham ANSI akışı
+    # Terminal için dinamik terminal boyutuna (columns x lines) göre ölçeklenen akış
     async def frame_generator():
         try:
             while True:
                 for frame in frames:
-                    yield ("\033[H\033[J" + frame).encode('utf-8')
+                    # Terminalin o anki genişlik ve yüksekliğini al
+                    term_size = shutil.get_terminal_size((80, 24))
+                    t_cols = term_size.columns
+                    t_rows = term_size.lines
+                    
+                    # Çerçeveyi terminal boyutuna uyduracak şekilde satır satır yeniden kırp/uzat
+                    lines = frame.split("\n")
+                    adjusted_frame = ""
+                    for r_idx in range(t_rows - 1):
+                        if r_idx < len(lines):
+                            line = lines[r_idx]
+                            # Genişliği terminal sütununa göre sabitle
+                            if len(line) > t_cols:
+                                adjusted_frame += line[:t_cols] + "\n"
+                            else:
+                                adjusted_frame += line.ljust(t_cols) + "\n"
+                        else:
+                            adjusted_frame += " " * t_cols + "\n"
+
+                    yield ("\033[H\033[J" + adjusted_frame).encode('utf-8')
                     await asyncio.sleep(delay)
                 if not is_text:
                     break
